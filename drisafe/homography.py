@@ -32,6 +32,15 @@ def plot_sift(img_gray, img_rgb, kp):
     out_img = cv.drawKeypoints(img_gray, kp, tmp, flags = cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     return out_img
 
+def compose_total_img(img1, img2):
+    height = max(img1.shape[0], img2.shape[0])
+    ar1 = img1.shape[1] / img1.shape[0]
+    ar2 = img2.shape[1] / img2.shape[0]
+    img1 = cv.resize(img1, dsize = (int(ar1 * height), height))
+    img2 = cv.resize(img2, dsize = (int(ar2 * height), height))
+    total_img = np.concatenate((img1, img2), axis = 1)
+    return total_img
+
 def show_sift_kp_imgs(img1, img2):
     fig, axis = plt.subplots(1, 2)
     axis[0].imshow(img1)
@@ -42,6 +51,7 @@ def show_sift_kp_imgs(img1, img2):
 if __name__ == "__main__":
     rt_img_gray, rt_img_rgb = read_image(RT_SAMPLE_PATH)
     etg_img_gray, etg_img_rgb = read_image(ETG_SAMPLE_PATH)
+    total_img = compose_total_img(rt_img_rgb, etg_img_rgb)
     rt_kp, rt_des = SIFT(rt_img_gray)
     etg_kp, etg_des = SIFT(etg_img_gray)
     matches = match_kps(rt_kp, rt_des, etg_kp, etg_des, threshold = 0.5)
