@@ -1,7 +1,7 @@
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
-from constants import RT_SAMPLE, ETG_SAMPLE
+from constants import RT_SAMPLE_PATH, ETG_SAMPLE_PATH
 
 def read_image(path):
     img = cv.imdecode(np.fromfile(path, dtype = np.uint8), cv.IMREAD_UNCHANGED)
@@ -13,6 +13,19 @@ def SIFT(img):
     sift_detector = cv.SIFT_create()
     kp, des = sift_detector.detectAndCompute(img, None)
     return kp, des
+
+def match_kps(kp1, des1, kp2, des2, threshold):
+    bf = cv.BFMatcher()
+    matches = bf.knnMatch(des1, des2, k = 2)
+    goods = []
+    for m, n in matches:
+        if m.distance < threshold * n.distance:
+            goods.append([m])
+    matches = []
+    for pair in goods:
+        matches.append(list(kp1[pair[0].queryIdx].pt + kp2[pair[0].trainIdx].pt))
+    matches = np.array(matches)
+    return matches
 
 def plot_sift(img_gray, img_rgb, kp):
     tmp = img_rgb.copy()
@@ -27,10 +40,8 @@ def show_sift_kp_imgs(img1, img2):
     plt.show()
 
 if __name__ == "__main__":
-    rt_img_gray, rt_img_rgb = read_image(RT_SAMPLE)
-    etg_img_gray, etg_img_rgb = read_image(ETG_SAMPLE)
+    rt_img_gray, rt_img_rgb = read_image(RT_SAMPLE_PATH)
+    etg_img_gray, etg_img_rgb = read_image(ETG_SAMPLE_PATH)
     rt_kp, rt_des = SIFT(rt_img_gray)
     etg_kp, etg_des = SIFT(etg_img_gray)
-    rt_kp_img = plot_sift(rt_img_gray, rt_img_rgb, rt_kp)
-    etg_kp_img = plot_sift(etg_img_gray, etg_img_rgb, etg_kp)
-    show_sift_kp_imgs(rt_kp_img, etg_kp_img)
+    matches = match_kps(rt_kp, rt_des, etg_kp, etg_des, threshold = 0.5)
