@@ -38,6 +38,12 @@ def plot_matches(matches, kp1, kp2, img1, img2):
     plt.imshow(img_matches)
     plt.show()
 
+def estimate_homography(kp1, kp2, matches):
+    src_pts = np.float32([ kp1[m.queryIdx].pt for m in matches ]).reshape(-1,1,2)
+    dst_pts = np.float32([ kp2[m.trainIdx].pt for m in matches ]).reshape(-1,1,2)
+    M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
+    return M, mask
+
 def compose_total_img(img1, img2):
     height = max(img1.shape[0], img2.shape[0])
     ar1 = img1.shape[1] / img1.shape[0]
@@ -60,4 +66,4 @@ if __name__ == "__main__":
     rt_kp, rt_des = SIFT(rt_img_gray)
     etg_kp, etg_des = SIFT(etg_img_gray)
     matches = match_kps(rt_des, etg_des, threshold = 0.5)
-    plot_matches(matches, rt_kp, etg_kp, rt_img_rgb, etg_img_rgb)
+    M, mask = estimate_homography(rt_kp, etg_kp, matches)
