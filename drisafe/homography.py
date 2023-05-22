@@ -14,23 +14,29 @@ def SIFT(img):
     kp, des = sift_detector.detectAndCompute(img, None)
     return kp, des
 
-def match_kps(kp1, des1, kp2, des2, threshold):
-    bf = cv.BFMatcher()
-    matches = bf.knnMatch(des1, des2, k = 2)
-    goods = []
+def match_kps(des1, des2, threshold):
+    matcher = cv.DescriptorMatcher_create(cv.DescriptorMatcher_FLANNBASED)
+    matches = matcher.knnMatch(des1, des2, k = 2)
+    good_matches = []
     for m, n in matches:
         if m.distance < threshold * n.distance:
-            goods.append([m])
-    matches = []
-    for pair in goods:
-        matches.append(list(kp1[pair[0].queryIdx].pt + kp2[pair[0].trainIdx].pt))
-    matches = np.array(matches)
-    return matches
+            good_matches.append(m)
+    return good_matches
 
 def plot_sift(img_gray, img_rgb, kp):
     tmp = img_rgb.copy()
     out_img = cv.drawKeypoints(img_gray, kp, tmp, flags = cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     return out_img
+
+def plot_matches(matches, kp1, kp2, img1, img2):
+    img_matches = np.empty((max(img1.shape[0], img2.shape[0]), 
+                            img1.shape[1] + img2.shape[1], 3), dtype=np.uint8)
+    draw_params = dict(matchColor = (-1),
+                       singlePointColor = None,
+                       flags = 2)
+    img_matches = cv.drawMatches(img1, kp1, img2, kp2, matches, None, **draw_params)
+    plt.imshow(img_matches)
+    plt.show()
 
 def compose_total_img(img1, img2):
     height = max(img1.shape[0], img2.shape[0])
@@ -42,16 +48,16 @@ def compose_total_img(img1, img2):
     return total_img
 
 def show_sift_kp_imgs(img1, img2):
-    fig, axis = plt.subplots(1, 2)
-    axis[0].imshow(img1)
-    axis[1].imshow(img2)
+    fig, ax = plt.subplots(1, 2)
+    ax[0].imshow(img1)
+    ax[1].imshow(img2)
     fig.suptitle("Keypoints detection", fontsize = 14)
     plt.show()
 
 if __name__ == "__main__":
     rt_img_gray, rt_img_rgb = read_image(RT_SAMPLE_PATH)
     etg_img_gray, etg_img_rgb = read_image(ETG_SAMPLE_PATH)
-    total_img = compose_total_img(rt_img_rgb, etg_img_rgb)
     rt_kp, rt_des = SIFT(rt_img_gray)
     etg_kp, etg_des = SIFT(etg_img_gray)
-    matches = match_kps(rt_kp, rt_des, etg_kp, etg_des, threshold = 0.5)
+    matches = match_kps(rt_des, etg_des, threshold = 0.5)
+    plot_matches(matches, rt_kp, etg_kp, rt_img_rgb, etg_img_rgb)
