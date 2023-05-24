@@ -53,8 +53,6 @@ def draw_gaze(img, coord):
     return img
 
 def print_gaze(rt_img, etg_img, rt_coords, etg_coords):
-    rt_coords = rt_coords.reshape(-1, 2)
-    etg_coords = etg_coords.reshape(-1, 2)
     for rt_c, etg_c in zip(rt_coords, etg_coords):
         rt_img = draw_gaze(rt_img, rt_c)
         etg_img = draw_gaze(etg_img, etg_c)
@@ -71,7 +69,7 @@ def estimate_homography(kp1, kp2, matches):
 
 def project_gaze(etg_coords, H):
     etg_coords = etg_coords.reshape(1, -1, 2).astype(np.float32)
-    rt_coords = cv.perspectiveTransform(etg_coords, H)
+    rt_coords = cv.perspectiveTransform(etg_coords, H).reshape(-1, 2)
     return rt_coords
 
 def show_sift_kp_imgs(img1, img2):
