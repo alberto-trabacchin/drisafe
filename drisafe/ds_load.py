@@ -13,8 +13,8 @@ def open_camera(cam_path):
 def init_cams_params(etg_cap, rt_cap):
     time = 0
     k = 0
-    if not (etg_cap.isOpened() & rt_cap.isOpened()):
-        return
+    if not (etg_cap.isOpened() and rt_cap.isOpened()):
+        raise SystemExit("Error opening cameras.")
     etg_ret, etg_frame = etg_cap.read()
     rt_ret, rt_frame = rt_cap.read()
     return etg_ret, etg_frame, rt_ret, rt_frame, k, time
@@ -39,7 +39,7 @@ def read_cameras(etg_cam_path, rt_cam_path):
         # Do all stuffs with frames...
         cv.imshow("ETG", etg_frame)
         cv.imshow("RT", rt_frame)
-        if cv.waitKey(1) & 0xFF == ord("q"):
+        if (cv.waitKey(1) & 0xFF == ord("q")):
             break
     etg_cap.release()
     rt_cap.release()
