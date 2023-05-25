@@ -84,7 +84,7 @@ def estimate_homography(kp1, kp2, matches, verbose = False):
 
 def project_gaze(etg_coords, H):
     etg_coords = etg_coords.reshape(1, -1, 2).astype(np.float32)
-    rt_coords = cv.perspectiveTransform(etg_coords, np.linalg.inv(H)).reshape(-1, 2)
+    rt_coords = cv.perspectiveTransform(etg_coords, H).reshape(-1, 2)
     return rt_coords
 
 def show_sift_kp_imgs(img1, img2):
@@ -99,10 +99,10 @@ if __name__ == "__main__":
     etg_img_gray, etg_img_rgb = read_image(ETG_SAMPLE_PATH)
     rt_kp, rt_des = SIFT(rt_img_gray)
     etg_kp, etg_des = SIFT(etg_img_gray)
-    matches = match_keypoints(rt_des, etg_des, threshold = KNN_THRESH)
-    H, mask = estimate_homography(rt_kp, etg_kp, matches, verbose = True)
+    matches = match_keypoints(etg_des, rt_des, threshold = KNN_THRESH)
+    H, mask = estimate_homography(etg_kp, rt_kp, matches, verbose = True)
     #etg_coords = np.array([[791, 464]])
     etg_coords = mesh_gaze_coords(nx = 5, ny = 5, img = etg_img_gray)
     rt_coords = project_gaze(etg_coords, H)
-    plot_matches(matches, rt_kp, etg_kp, rt_img_rgb, etg_img_rgb, mask)
-    print_gaze(rt_img_rgb, etg_img_rgb, rt_coords, etg_coords)
+    plot_matches(matches, etg_kp, rt_kp, etg_img_rgb, rt_img_rgb, mask)
+    print_gaze(etg_img_rgb, rt_img_rgb, etg_coords, rt_coords)
