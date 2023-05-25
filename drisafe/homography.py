@@ -51,10 +51,8 @@ def plot_matches(matches, kp1, kp2, img1, img2, mask = None):
 
 def draw_gaze(img, coord):
     coord = coord.astype(np.int32)
-    #img = cv.circle(img, coord, radius = 35, thickness = 2, color = (255, 0, 0))
-    #img = cv.circle(img, coord, radius = 8, thickness = -1, color = (255, 0, 0))
-    img = cv.circle(img, coord, radius = 35, thickness = 3, color = (255, 0, 0))
-    img = cv.circle(img, coord, radius = 8, thickness = -1, color = (255, 0, 0))
+    img = cv.circle(img, coord, radius = 25, thickness = 2, color = (255, 0, 0))
+    img = cv.circle(img, coord, radius = 6, thickness = -1, color = (255, 0, 0))
     return img
 
 def print_gaze(rt_img, etg_img, rt_coords, etg_coords):
@@ -101,7 +99,8 @@ if __name__ == "__main__":
     matches = match_keypoints(rt_des, etg_des, threshold = KNN_THRESH)
     H, mask = estimate_homography(rt_kp, etg_kp, matches)
     print(np.count_nonzero(mask))
-    etg_coords = mesh_gaze_coords(nx = 10, ny = 10, img = etg_img_gray)
+    #etg_coords = np.array([[791, 464]])
+    etg_coords = mesh_gaze_coords(nx = 5, ny = 5, img = etg_img_gray)
     rt_coords = project_gaze(etg_coords, H)
     plot_matches(matches, rt_kp, etg_kp, rt_img_rgb, etg_img_rgb, mask)
     print_gaze(rt_img_rgb, etg_img_rgb, rt_coords, etg_coords)
