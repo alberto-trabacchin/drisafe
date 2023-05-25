@@ -73,10 +73,13 @@ def mesh_gaze_coords(nx, ny, img):
     pts = np.dstack((xv, yv)).reshape(-1, 2)
     return pts
 
-def estimate_homography(kp1, kp2, matches):
+def estimate_homography(kp1, kp2, matches, verbose = False):
     src_pts = np.float32([ kp1[m.queryIdx].pt for m in matches ]).reshape(-1, 1, 2)
     dst_pts = np.float32([ kp2[m.trainIdx].pt for m in matches ]).reshape(-1, 1, 2)
     H, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, RANSAC_THRESH, maxIters = RANSAC_MAX_ITERS)
+    if verbose:
+        print(f"(KNN thresh: {KNN_THRESH}, RANSAC thresh: {RANSAC_THRESH}) - " \
+              f"{np.count_nonzero(mask)} keypoints detected.")
     return H, mask
 
 def project_gaze(etg_coords, H):
@@ -97,8 +100,7 @@ if __name__ == "__main__":
     rt_kp, rt_des = SIFT(rt_img_gray)
     etg_kp, etg_des = SIFT(etg_img_gray)
     matches = match_keypoints(rt_des, etg_des, threshold = KNN_THRESH)
-    H, mask = estimate_homography(rt_kp, etg_kp, matches)
-    print(np.count_nonzero(mask))
+    H, mask = estimate_homography(rt_kp, etg_kp, matches, verbose = True)
     #etg_coords = np.array([[791, 464]])
     etg_coords = mesh_gaze_coords(nx = 5, ny = 5, img = etg_img_gray)
     rt_coords = project_gaze(etg_coords, H)
