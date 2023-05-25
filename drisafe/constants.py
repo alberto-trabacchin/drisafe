@@ -13,6 +13,9 @@ GPS_PATH = DS_PATH / REC / "speed_course_coord.txt"
 RT_SAMPLE_PATH = pathlib.Path().absolute() / "media" / "rt_camera_sample_5.png"
 ETG_SAMPLE_PATH = pathlib.Path().absolute() / "media" / "etg_camera_sample_5.png"
 
+FPS_RT = 25
+FPS_ETG = 30
+
 if __name__ == "__main__":
     print(f"{DS_PATH}: {DS_PATH.is_dir()}")
     print(f"{RT_VID_PATH}: {RT_VID_PATH.is_file()}")
