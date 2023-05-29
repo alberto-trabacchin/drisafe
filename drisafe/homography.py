@@ -9,10 +9,9 @@ RANSAC_MAX_ITERS = 2000
 KNN_THRESH = 0.5
 
 def read_image(path):
-    img = cv.imdecode(np.fromfile(path, dtype = np.uint8), cv.IMREAD_UNCHANGED)
-    img_gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    img_rgb = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-    return img_gray, img_rgb
+    img_bgr = cv.imdecode(np.fromfile(path, dtype = np.uint8), cv.IMREAD_UNCHANGED)
+    img_gray = cv.cvtColor(img_bgr, cv.COLOR_BGR2GRAY)
+    return img_gray, img_bgr
 
 def SIFT(img):
     sift_detector = cv.SIFT_create()
@@ -46,6 +45,7 @@ def plot_matches(matches, kp1, kp2, img1, img2, mask = None):
                        matchesMask = mask,
                        flags = 2)
     img_matches = cv.drawMatches(img1, kp1, img2, kp2, matches, None, **draw_params)
+    img_matches = cv.cvtColor(img_matches, cv.COLOR_BGR2RGB)
     plt.imshow(img_matches)
     plt.show()
 
@@ -56,6 +56,8 @@ def draw_gaze(img, coord):
     return img
 
 def print_gaze(rt_img, etg_img, rt_coords, etg_coords):
+    rt_img = cv.cvtColor(rt_img, cv.COLOR_BGR2RGB)
+    etg_img = cv.cvtColor(etg_img, cv.COLOR_BGR2RGB)
     for rt_c, etg_c in zip(rt_coords, etg_coords):
         rt_img = draw_gaze(rt_img, rt_c)
         etg_img = draw_gaze(etg_img, etg_c)
@@ -95,8 +97,8 @@ def show_sift_kp_imgs(img1, img2):
     plt.show()
 
 if __name__ == "__main__":
-    rt_img_gray, rt_img_rgb = read_image(RT_SAMPLE_PATH)
-    etg_img_gray, etg_img_rgb = read_image(ETG_SAMPLE_PATH)
+    rt_img_gray, rt_img_bgr = read_image(RT_SAMPLE_PATH)
+    etg_img_gray, etg_img_bgr = read_image(ETG_SAMPLE_PATH)
     rt_kp, rt_des = SIFT(rt_img_gray)
     etg_kp, etg_des = SIFT(etg_img_gray)
     matches = match_keypoints(etg_des, rt_des, threshold = KNN_THRESH)
@@ -104,5 +106,5 @@ if __name__ == "__main__":
     #etg_coords = np.array([[791, 464]])
     etg_coords = mesh_gaze_coords(nx = 5, ny = 5, img = etg_img_gray)
     rt_coords = project_gaze(etg_coords, H)
-    plot_matches(matches, etg_kp, rt_kp, etg_img_rgb, rt_img_rgb, mask)
-    print_gaze(etg_img_rgb, rt_img_rgb, etg_coords, rt_coords)
+    plot_matches(matches, etg_kp, rt_kp, etg_img_bgr, rt_img_bgr, mask)
+    print_gaze(etg_img_bgr, rt_img_bgr, etg_coords, rt_coords)
