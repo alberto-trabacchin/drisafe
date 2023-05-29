@@ -57,7 +57,6 @@ class SensorStreams(object):
         ds_etg_tracker = self.ds_etg_tracker
         t_step = self.t_step
         self.curr_gaze = ds_etg_tracker.iloc[t_step].to_numpy()
-        print(self.curr_gaze)
         (self.etg_status, self.etg_frame) = self.etg_cap.read()
         self.t_step += 1
         t_rt = self.k / float(rt_cam["fps"])
@@ -66,7 +65,7 @@ class SensorStreams(object):
             self.k += 1
             (self.rt_status, self.rt_frame) = self.rt_cap.read()
 
-    def read(self, show = False):
+    def read(self, show_frames = False, show_gaze = False):
         """
         Reads cameras' frames and plot them if required.
 
@@ -78,7 +77,8 @@ class SensorStreams(object):
             if not (self.etg_status and self.rt_status):
                 self.close()
                 return
-            if show: self.plot_frame()
+            if show_gaze: print(self.curr_gaze)
+            if show_frames: self.plot_frame()
 
     def plot_frame(self):
         """
@@ -104,5 +104,5 @@ class SensorStreams(object):
 if __name__ == '__main__':
     sens_streams = SensorStreams(SENSORS)
     while True:
-        sens_streams.read(show = True)
+        sens_streams.read(show_frames = True, show_gaze = True)
         if not sens_streams.online: break
