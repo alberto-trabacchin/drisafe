@@ -78,7 +78,7 @@ class SensorStreams(object):
             if not (self.etg_status and self.rt_status):
                 self.close()
                 return
-            if show_gaze: print(self.etg_coords)
+            if show_gaze: print(f"ETG gaze: {self.etg_coords}")
             if show_frames: self.plot_frame()
 
     def plot_frame(self):
@@ -100,14 +100,21 @@ class SensorStreams(object):
         self.online = False
         print("Sensors closed.")
 
-    def calc_rt_coords(self, verbose = False):
+    def update_rt_coords(self, show_hom_info = False, show_proj_gaze = False, 
+                         plot_proj_gaze = False, plot_matches = False):
         rt_frame_gray = cv.cvtColor(self.rt_frame, cv.COLOR_BGR2GRAY)
         etg_frame_gray = cv.cvtColor(self.etg_frame, cv.COLOR_BGR2GRAY)
         rt_kp, rt_des = homography.SIFT(rt_frame_gray)
         etg_kp, etg_des = homography.SIFT(etg_frame_gray)
         matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
-        H, mask = homography.estimate_homography(etg_kp, rt_kp, matches, verbose)
-        self.rt_coords = homography.project_gaze(self.etg_coords, H)
+        H, mask = homography.estimate_homography(etg_kp, rt_kp, matches, show_hom_info)
+        self.rt_coords = homography.project_gaze(self.etg_coords, H).reshape(2)
+        if (show_proj_gaze):
+            print(f"RT gaze: {self.rt_coords}")
+        if (plot_proj_gaze):
+           homography.print_gaze(self.etg_frame, self.rt_frame, self.etg_coords, self.rt_coords)
+        if (plot_matches):
+            homography. plot_matches(matches, etg_kp, rt_kp, self.etg_frame, self.rt_frame, mask)
 
 
 
