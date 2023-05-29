@@ -1,4 +1,8 @@
-from drisafe import constants, sensorstreams
+from drisafe.constants import SENSORS
+from drisafe.sensorstreams import SensorStreams
 
 if __name__ == "__main__":
-    print(constants.DS_PATH)
+    sensors = SensorStreams(SENSORS)
+    while True:
+        sensors.read(show = True)
+        if not sensors.online: break

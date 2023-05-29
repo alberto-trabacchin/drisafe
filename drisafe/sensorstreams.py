@@ -1,5 +1,5 @@
 import cv2 as cv
-from drisafe.constants import ETG_VID_PATH, RT_VID_PATH, FPS_ETG, FPS_RT, ETG_DATA_PATH
+from drisafe.constants import ETG_VID_PATH, RT_VID_PATH, FPS_ETG, FPS_RT, ETG_DATA_PATH, SENSORS
 
 class SensorStreams(object):
     """
@@ -90,24 +90,7 @@ class SensorStreams(object):
 
 
 if __name__ == '__main__':
-    sensors = {
-        "gaze_track": {
-            "name": "Gaze Tracker",
-            "path": ETG_DATA_PATH
-        },
-        "etg_cam": {
-            "name": "ETG Camera",
-            "path": ETG_VID_PATH,
-            "fps": FPS_ETG
-        },
-        "roof_cam": {
-            "name": "Roof Top Camera",
-            "path": RT_VID_PATH,
-            "fps": FPS_RT
-        }
-    }
-    sens_streams = SensorStreams(sensors)
-
+    sens_streams = SensorStreams(SENSORS)
     while True:
         sens_streams.read(show = True)
         if not sens_streams.online: break

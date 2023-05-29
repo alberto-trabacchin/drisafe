@@ -16,6 +16,23 @@ ETG_SAMPLE_PATH = pathlib.Path().absolute() / "media" / "etg_camera_sample_5.png
 FPS_RT = 25
 FPS_ETG = 30
 
+SENSORS = {
+    "gaze_track": {
+        "name": "Gaze Tracker",
+        "path": ETG_DATA_PATH
+    },
+    "etg_cam": {
+        "name": "ETG Camera",
+        "path": ETG_VID_PATH,
+        "fps": FPS_ETG
+    },
+    "roof_cam": {
+        "name": "Roof Top Camera",
+        "path": RT_VID_PATH,
+        "fps": FPS_RT
+    }
+}
+
 if __name__ == "__main__":
     print(f"{DS_PATH}: {DS_PATH.is_dir()}")
     print(f"{RT_VID_PATH}: {RT_VID_PATH.is_file()}")
