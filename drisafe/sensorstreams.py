@@ -63,6 +63,9 @@ class SensorStreams(object):
         """ 
         if (self.etg_cap.isOpened() and self.rt_cap.isOpened()):
             self.sync_frames()
+            if not (self.etg_status and self.rt_status):
+                self.close()
+                return
             if show: self.plot_frame()
 
     def plot_frame(self):
