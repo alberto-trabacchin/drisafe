@@ -1,7 +1,7 @@
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
-from constants import RT_SAMPLE_PATH, ETG_SAMPLE_PATH
+from drisafe.constants import RT_SAMPLE_PATH, ETG_SAMPLE_PATH
 
 FLANN_INDEX_KDTREE = 1
 RANSAC_THRESH = 5

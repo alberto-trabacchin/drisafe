@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import cv2 as cv
 import matplotlib.pyplot as plt
-from constants import ETG_VID_PATH, RT_VID_PATH, FPS_RT, FPS_ETG, ETG_DATA_PATH
+from drisafe.constants import ETG_VID_PATH, RT_VID_PATH, FPS_RT, FPS_ETG, ETG_DATA_PATH
 
 def open_camera(cam_path):
     cap = cv.VideoCapture(str(cam_path))

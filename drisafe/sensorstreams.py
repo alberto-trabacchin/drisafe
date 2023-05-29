@@ -1,5 +1,5 @@
 import cv2 as cv
-from constants import ETG_VID_PATH, RT_VID_PATH, FPS_ETG, FPS_RT, ETG_DATA_PATH
+from drisafe.constants import ETG_VID_PATH, RT_VID_PATH, FPS_ETG, FPS_RT, ETG_DATA_PATH
 
 class SensorStreams(object):
     """
