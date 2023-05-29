@@ -39,7 +39,8 @@ class SensorStreams(object):
         self.rt_cap = cv.VideoCapture(str(self.rt_cam["path"]))
         self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["path"]), delim_whitespace = True)
         self.ds_etg_tracker = self.ds_etg_tracker[["X", "Y"]]
-        self.curr_gaze = None
+        self.etg_coords = None
+        self.rt_coords = None
         self.etg_frame = None
         self.etg_status = None
         self.rt_frame = None
@@ -56,7 +57,7 @@ class SensorStreams(object):
         etg_cam = self.etg_cam
         ds_etg_tracker = self.ds_etg_tracker
         t_step = self.t_step
-        self.curr_gaze = ds_etg_tracker.iloc[t_step].to_numpy()
+        self.etg_coords = ds_etg_tracker.iloc[t_step].to_numpy()
         (self.etg_status, self.etg_frame) = self.etg_cap.read()
         self.t_step += 1
         t_rt = self.k / float(rt_cam["fps"])
@@ -77,7 +78,7 @@ class SensorStreams(object):
             if not (self.etg_status and self.rt_status):
                 self.close()
                 return
-            if show_gaze: print(self.curr_gaze)
+            if show_gaze: print(self.etg_coords)
             if show_frames: self.plot_frame()
 
     def plot_frame(self):
@@ -98,6 +99,15 @@ class SensorStreams(object):
         cv.destroyAllWindows()
         self.online = False
         print("Sensors closed.")
+
+    def calc_rt_coords(self, verbose = False):
+        rt_frame_gray = cv.cvtColor(self.rt_frame, cv.COLOR_BGR2GRAY)
+        etg_frame_gray = cv.cvtColor(self.etg_frame, cv.COLOR_BGR2GRAY)
+        rt_kp, rt_des = homography.SIFT(rt_frame_gray)
+        etg_kp, etg_des = homography.SIFT(etg_frame_gray)
+        matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
+        H, mask = homography.estimate_homography(etg_kp, rt_kp, matches, verbose)
+        self.rt_coords = homography.project_gaze(self.etg_coords, H)
 
 
 
