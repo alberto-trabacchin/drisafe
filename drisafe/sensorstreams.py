@@ -1,10 +1,10 @@
 import cv2 as cv
-from constants import ETG_VID_PATH, RT_VID_PATH, FPS_ETG, FPS_RT
+from constants import ETG_VID_PATH, RT_VID_PATH, FPS_ETG, FPS_RT, ETG_DATA_PATH
 
 class SensorStreams(object):
-    def __init__(self, cameras):
-        self.etg_cam = cameras["etg"]
-        self.rt_cam = cameras["roof"]
+    def __init__(self, sensors):
+        self.etg_cam = sensors["etg_cam"]
+        self.rt_cam = sensors["roof_cam"]
         self.etg_cap = cv.VideoCapture(str(self.etg_cam["path"]))
         self.rt_cap = cv.VideoCapture(str(self.rt_cam["path"]))
         self.etg_frame = None
@@ -45,19 +45,23 @@ class SensorStreams(object):
 
 
 if __name__ == '__main__':
-    cameras = {
-        "etg": {
+    sensors = {
+        "gaze_track": {
+            "name": "Gaze Tracker",
+            "path": ETG_DATA_PATH
+        },
+        "etg_cam": {
             "name": "ETG Camera",
             "path": ETG_VID_PATH,
             "fps": FPS_ETG
         },
-        "roof": {
+        "roof_cam": {
             "name": "Roof Top Camera",
             "path": RT_VID_PATH,
             "fps": FPS_RT
         }
     }
-    sens_streams = SensorStreams(cameras)
+    sens_streams = SensorStreams(sensors)
 
     while True:
         sens_streams.read(show = True)
