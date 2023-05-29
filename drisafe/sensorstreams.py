@@ -57,7 +57,7 @@ class SensorStreams(object):
         etg_cam = self.etg_cam
         ds_etg_tracker = self.ds_etg_tracker
         t_step = self.t_step
-        self.etg_coords = ds_etg_tracker.iloc[t_step].to_numpy()
+        self.etg_coords = ds_etg_tracker.iloc[t_step].to_numpy().reshape(-1, 2)
         (self.etg_status, self.etg_frame) = self.etg_cap.read()
         self.t_step += 1
         t_rt = self.k / float(rt_cam["fps"])
@@ -108,11 +108,12 @@ class SensorStreams(object):
         etg_kp, etg_des = homography.SIFT(etg_frame_gray)
         matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
         H, mask = homography.estimate_homography(etg_kp, rt_kp, matches, show_hom_info)
-        self.rt_coords = homography.project_gaze(self.etg_coords, H).reshape(2)
+        self.rt_coords = homography.project_gaze(self.etg_coords, H)
         if (show_proj_gaze):
             print(f"RT gaze: {self.rt_coords}")
         if (plot_proj_gaze):
-           homography.print_gaze(self.etg_frame, self.rt_frame, self.etg_coords, self.rt_coords)
+           ret = homography.print_gaze(self.rt_frame, self.etg_frame, self.rt_coords, self.etg_coords)
+           if (ret == False): self.close()
         if (plot_matches):
             homography. plot_matches(matches, etg_kp, rt_kp, self.etg_frame, self.rt_frame, mask)
 
