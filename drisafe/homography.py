@@ -6,7 +6,7 @@ from drisafe.constants import RT_SAMPLE_PATH, ETG_SAMPLE_PATH
 FLANN_INDEX_KDTREE = 1
 RANSAC_THRESH = 5
 RANSAC_MAX_ITERS = 2000
-KNN_THRESH = 0.5
+KNN_THRESH = 0.7
 
 def read_image(path):
     img_bgr = cv.imdecode(np.fromfile(path, dtype = np.uint8), cv.IMREAD_UNCHANGED)
