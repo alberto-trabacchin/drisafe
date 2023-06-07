@@ -1,5 +1,6 @@
 import cv2 as cv
 import pandas as pd
+import numpy as np
 from drisafe.constants import SENSORS
 from drisafe import homography
 
@@ -25,7 +26,7 @@ class SensorStreams(object):
         online: Flag which indicates if sensors are no longer available for reading.
     """
 
-    def __init__(self, sensors):
+    def __init__(self, sensors, start_id = 1):
         """
         Initializes the instance based on sensors parameters.
 
@@ -35,10 +36,13 @@ class SensorStreams(object):
         self.etg_cam = sensors["etg_cam"]
         self.rt_cam = sensors["roof_cam"]
         self.etg_tracker = sensors["gaze_track"]
-        self.etg_cap = cv.VideoCapture(str(self.etg_cam["path"]))
-        self.rt_cap = cv.VideoCapture(str(self.rt_cam["path"]))
-        self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["path"]), delim_whitespace = True)
+        self.rec_id = start_id - 1
+        self.etg_cap = cv.VideoCapture(str(self.etg_cam["paths"][self.rec_id]))
+        self.rt_cap = cv.VideoCapture(str(self.rt_cam["paths"][self.rec_id]))
+        self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["paths"][self.rec_id]), 
+                                              delim_whitespace = True)
         self.ds_etg_tracker = self.ds_etg_tracker[["X", "Y"]]
+        self.rec_tot_frames = self.etg_cap.get(cv.CAP_PROP_FRAME_COUNT)
         self.etg_coords = None
         self.rt_coords = None
         self.etg_frame = None
@@ -48,6 +52,15 @@ class SensorStreams(object):
         self.t_step = 0
         self.k = 0
         self.online = True
+
+    def _read_next_rec(self):
+        self.rec_id += 1
+        self.etg_cap.close()
+        self.rt_cap.close()
+        self.etg_cap = cv.VideoCapture(str(self.etg_cam["paths"][self.rec_id]))
+        self.rt_cap = cv.VideoCapture(str(self.rt_cam["paths"][self.rec_id]))
+        self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["paths"][self.rec_id]), 
+                                              delim_whitespace = True)
 
     def sync_data(self):
         """
@@ -66,6 +79,27 @@ class SensorStreams(object):
             self.k += 1
             (self.rt_status, self.rt_frame) = self.rt_cap.read()
 
+    def get_recs_len(self):
+        return len(self.rt_cam["paths"])
+    
+    def _check_rec_finished(self):
+        if (self.t_step == self.rec_tot_frames):
+            if (self.rec_id < self.get_recs_len() - 1):
+                self._open_next_rec()
+            else:
+                print("All recordings have been red.")
+
+    def _open_next_rec(self, show_frames = False, show_gaze = False):
+        self.rec_id += 1
+        self.t_step = 0
+        self.k = 0
+        self.etg_cap = cv.VideoCapture(str(self.etg_cam["paths"][self.rec_id]))
+        self.rt_cap = cv.VideoCapture(str(self.rt_cam["paths"][self.rec_id]))
+        self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["paths"][self.rec_id]), 
+                                                delim_whitespace = True)
+        self.ds_etg_tracker = self.ds_etg_tracker[["X", "Y"]]
+        self.rec_tot_frames = self.etg_cap.get(cv.CAP_PROP_FRAME_COUNT)
+
     def read(self, show_frames = False, show_gaze = False):
         """
         Reads cameras' frames and plot them if required.
@@ -74,6 +108,7 @@ class SensorStreams(object):
             show: flag to indicate if showing frames is required when reading sensors.
         """ 
         if (self.etg_cap.isOpened() and self.rt_cap.isOpened()):
+            self._check_rec_finished()            
             self.sync_data()
             if not (self.etg_status and self.rt_status):
                 self.close()
@@ -85,8 +120,20 @@ class SensorStreams(object):
         """
         Shows frames on the screen.
         """ 
-        cv.imshow(self.etg_cam["name"], self.etg_frame)
-        cv.imshow(self.rt_cam["name"], self.rt_frame)
+        etg_frame = self.etg_frame
+        rt_frame = self.rt_frame
+        etg_h = etg_frame.shape[0]
+        etg_w = etg_frame.shape[1]
+        rt_h = int(0.7 * rt_frame.shape[0])
+        rt_w = int(0.7 * rt_frame.shape[1])
+        rt_frame = cv.resize(rt_frame, (rt_w, rt_h))
+        etg_frame = cv.resize(etg_frame, (etg_w, etg_h))
+        etg_frame_ar = etg_w / float(etg_h)
+        etg_h = rt_h
+        etg_w = int(etg_frame_ar * rt_h)
+        etg_frame = cv.resize(etg_frame, (etg_w, etg_h))
+        conc_frames = np.concatenate((etg_frame, rt_frame), axis = 1)
+        cv.imshow("Cameras", conc_frames)
         if (cv.waitKey(1) & 0xFF == ord("q")):
             self.close()
 
@@ -120,7 +167,7 @@ class SensorStreams(object):
 
 
 if __name__ == '__main__':
-    sens_streams = SensorStreams(SENSORS)
+    sens_streams = SensorStreams(SENSORS, start_id = 74)
     while True:
         sens_streams.read(show_frames = True, show_gaze = True)
         if not sens_streams.online: break
