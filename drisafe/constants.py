@@ -9,6 +9,7 @@ _recordings = [d for d in list(DS_PATH.iterdir()) if d.is_dir()]
 RT_VID_PATHS = [s / "video_garmin.avi" for s in _recordings]
 ETG_VID_PATHS = [s / "video_etg.avi" for s in _recordings]
 ETG_DATA_PATHS = [s / "etg_samples.txt" for s in _recordings]
+ETG_PROJ_DATA_PATHS = [s / "etg_proj_samples.csv" for s in _recordings]
 GPS_PATHS = [s / "speed_course_coord.txt" for s in _recordings]
 RT_SAMPLE_PATH = pathlib.Path().absolute() / "media" / "rt_camera_sample_5.png"
 ETG_SAMPLE_PATH = pathlib.Path().absolute() / "media" / "etg_camera_sample_5.png"
@@ -19,7 +20,8 @@ FPS_ETG = 30
 SENSORS = {
     "gaze_track": {
         "name": "Gaze Tracker",
-        "paths": ETG_DATA_PATHS
+        "etg_coord_paths": ETG_DATA_PATHS,
+        "rt_coord_paths": ETG_PROJ_DATA_PATHS
     },
     "etg_cam": {
         "name": "ETG Camera",

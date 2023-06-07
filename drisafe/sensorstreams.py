@@ -1,6 +1,7 @@
 import cv2 as cv
 import pandas as pd
 import numpy as np
+import pathlib
 from drisafe.constants import SENSORS
 from drisafe import homography
 
@@ -39,10 +40,11 @@ class SensorStreams(object):
         self.rec_id = start_id - 1
         self.etg_cap = cv.VideoCapture(str(self.etg_cam["paths"][self.rec_id]))
         self.rt_cap = cv.VideoCapture(str(self.rt_cam["paths"][self.rec_id]))
-        self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["paths"][self.rec_id]), 
+        self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["etg_coord_paths"][self.rec_id]), 
                                               delim_whitespace = True)
         self.ds_etg_tracker = self.ds_etg_tracker[["X", "Y"]]
         self.rec_tot_frames = self.etg_cap.get(cv.CAP_PROP_FRAME_COUNT)
+        self.ds_rt_tracker, self.write_rt_coords = self._read_rt_coord_file()
         self.etg_coords = None
         self.rt_coords = None
         self.etg_frame = None
@@ -53,14 +55,16 @@ class SensorStreams(object):
         self.k = 0
         self.online = True
 
-    def _read_next_rec(self):
-        self.rec_id += 1
-        self.etg_cap.close()
-        self.rt_cap.close()
-        self.etg_cap = cv.VideoCapture(str(self.etg_cam["paths"][self.rec_id]))
-        self.rt_cap = cv.VideoCapture(str(self.rt_cam["paths"][self.rec_id]))
-        self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["paths"][self.rec_id]), 
-                                              delim_whitespace = True)
+    def _read_rt_coord_file(self):
+        rt_coord_path = self.etg_tracker["rt_coord_paths"][self.rec_id]
+        if (rt_coord_path.is_file()):
+            ds_rt_tracker = pd.read_csv(str(rt_coord_path), delim_whitespace = True)
+            if (ds_rt_tracker.shape[0] == self.ds_etg_tracker.shape[0]):
+                write_rt_coords = False
+                return ds_rt_tracker, write_rt_coords
+        write_rt_coords = True
+        ds_rt_tracker = pd.DataFrame({"X" : [], "Y" : []})
+        return ds_rt_tracker, write_rt_coords
 
     def sync_data(self):
         """
@@ -84,20 +88,27 @@ class SensorStreams(object):
     
     def _check_rec_finished(self):
         if (self.t_step == self.rec_tot_frames):
+            if (self.write_rt_coords):
+                ds_rt_tracker_path = self.etg_tracker["rt_coord_paths"][self.rec_id]
+                self.ds_rt_tracker.to_csv(ds_rt_tracker_path, index = False)
+                print("Data written.")
             if (self.rec_id < self.get_recs_len() - 1):
+                print("Closed current recording.")
                 self._open_next_rec()
+                print("Opened next recording.")
             else:
                 print("All recordings have been red.")
 
-    def _open_next_rec(self, show_frames = False, show_gaze = False):
+    def _open_next_rec(self):
         self.rec_id += 1
         self.t_step = 0
         self.k = 0
         self.etg_cap = cv.VideoCapture(str(self.etg_cam["paths"][self.rec_id]))
         self.rt_cap = cv.VideoCapture(str(self.rt_cam["paths"][self.rec_id]))
-        self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["paths"][self.rec_id]), 
+        self.ds_etg_tracker = pd.read_csv(str(self.etg_tracker["etg_coord_paths"][self.rec_id]), 
                                                 delim_whitespace = True)
         self.ds_etg_tracker = self.ds_etg_tracker[["X", "Y"]]
+        self.ds_rt_tracker, self.write_rt_coords = self._read_rt_coord_file()
         self.rec_tot_frames = self.etg_cap.get(cv.CAP_PROP_FRAME_COUNT)
 
     def read(self, show_frames = False, show_gaze = False):
@@ -113,7 +124,7 @@ class SensorStreams(object):
             if not (self.etg_status and self.rt_status):
                 self.close()
                 return
-            if show_gaze: print(f"ETG gaze: {self.etg_coords}")
+            if show_gaze: print(f"{self.rec_id + 1:2d} - ETG gaze: {self.etg_coords}")
             if show_frames: self.plot_frame()
 
     def plot_frame(self):
@@ -147,17 +158,25 @@ class SensorStreams(object):
         self.online = False
         print("Sensors closed.")
 
-    def update_rt_coords(self, show_hom_info = False, show_proj_gaze = False, 
-                         plot_proj_gaze = False, plot_matches = False):
-        rt_frame_gray = cv.cvtColor(self.rt_frame, cv.COLOR_BGR2GRAY)
-        etg_frame_gray = cv.cvtColor(self.etg_frame, cv.COLOR_BGR2GRAY)
-        rt_kp, rt_des = homography.SIFT(rt_frame_gray)
-        etg_kp, etg_des = homography.SIFT(etg_frame_gray)
-        matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
-        H, mask = homography.estimate_homography(etg_kp, rt_kp, matches, show_hom_info)
-        self.rt_coords = homography.project_gaze(self.etg_coords, H)
+    def upd_rt_coords(self, show_hom_info = False, show_proj_gaze = False, 
+                      plot_proj_gaze = False, plot_matches = False):
+        if (self.write_rt_coords):
+            rt_frame_gray = cv.cvtColor(self.rt_frame, cv.COLOR_BGR2GRAY)
+            etg_frame_gray = cv.cvtColor(self.etg_frame, cv.COLOR_BGR2GRAY)
+            rt_kp, rt_des = homography.SIFT(rt_frame_gray)
+            etg_kp, etg_des = homography.SIFT(etg_frame_gray)
+            matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
+            H, mask = homography.estimate_homography(etg_kp, rt_kp, matches, show_hom_info)
+            self.rt_coords = homography.project_gaze(self.etg_coords, H)
+            x = self.rt_coords[0][0]
+            y = self.rt_coords[0][1]
+            self.ds_rt_tracker = pd.concat([self.ds_rt_tracker, pd.DataFrame([{"X": x, "Y": y}])], 
+                                            ignore_index=True)
+        else:
+            t_step = self.t_step
+            self.rt_coords = self.ds_rt_tracker.iloc[t_step].to_numpy().reshape(-1, 2)
         if (show_proj_gaze):
-            print(f"RT gaze: {self.rt_coords}")
+            print(f"{self.rec_id + 1:2d} - RT gaze: {self.rt_coords}")
         if (plot_proj_gaze):
            ret = homography.print_gaze(self.rt_frame, self.etg_frame, self.rt_coords, self.etg_coords)
            if (ret == False): self.close()
@@ -167,7 +186,8 @@ class SensorStreams(object):
 
 
 if __name__ == '__main__':
-    sens_streams = SensorStreams(SENSORS, start_id = 74)
+    sens_streams = SensorStreams(SENSORS, start_id = 73)
     while True:
         sens_streams.read(show_frames = True, show_gaze = True)
         if not sens_streams.online: break
+        sens_streams.upd_rt_coords(show_proj_gaze = True)
