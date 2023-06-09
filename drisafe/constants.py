@@ -17,23 +17,25 @@ ETG_SAMPLE_PATH = pathlib.Path().absolute() / "media" / "etg_camera_sample_5.png
 FPS_RT = 25
 FPS_ETG = 30
 
-SENSORS = {
-    "gaze_track": {
+SENSORS = [
+    {
+        "gaze_track": {
         "name": "Gaze Tracker",
-        "etg_coord_paths": ETG_DATA_PATHS,
-        "rt_coord_paths": ETG_PROJ_DATA_PATHS
-    },
-    "etg_cam": {
+        "etg_crd_path": ETG_DATA_PATHS[i],
+        "rt_crd_path": ETG_PROJ_DATA_PATHS[i]
+        },
+        "etg_cam": {
         "name": "ETG Camera",
-        "paths": ETG_VID_PATHS,
+        "vid_path": ETG_VID_PATHS[i],
         "fps": FPS_ETG
-    },
-    "roof_cam": {
+        },
+        "roof_cam": {
         "name": "Roof Top Camera",
-        "paths": RT_VID_PATHS,
+        "vid_path": RT_VID_PATHS[i],
         "fps": FPS_RT
+        }
     }
-}
+    for i in range(len(_recordings))]
 
 def _check_all(path_list, dtype = "file"):
     if dtype == "file":
@@ -44,11 +46,12 @@ def _check_all(path_list, dtype = "file"):
         return False
 
 if __name__ == "__main__":
-    print(f"DS main dir: {DS_PATH.is_dir()}")
-    print(f"Samples: {_check_all(_recordings, 'folder')}")
-    print(f"RT videos: {_check_all(RT_VID_PATHS, 'file')}")
-    print(f"ETG videos: {_check_all(ETG_VID_PATHS, 'file')}")
-    print(f"ETG data: {_check_all(ETG_DATA_PATHS, 'file')}")
-    print(f"GPS data: {_check_all(GPS_PATHS, 'file')}")
-    print(f"RT image sample: {_check_all([RT_SAMPLE_PATH], 'file')}")
-    print(f"ETG image sample: {_check_all([ETG_SAMPLE_PATH], 'file')}")
+    #print(f"DS main dir: {DS_PATH.is_dir()}")
+    #print(f"Samples: {_check_all(_recordings, 'folder')}")
+    #print(f"RT videos: {_check_all(RT_VID_PATHS, 'file')}")
+    #print(f"ETG videos: {_check_all(ETG_VID_PATHS, 'file')}")
+    #print(f"ETG data: {_check_all(ETG_DATA_PATHS, 'file')}")
+    #print(f"GPS data: {_check_all(GPS_PATHS, 'file')}")
+    #print(f"RT image sample: {_check_all([RT_SAMPLE_PATH], 'file')}")
+    #print(f"ETG image sample: {_check_all([ETG_SAMPLE_PATH], 'file')}")
+    print(SENSORS[0])

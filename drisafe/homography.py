@@ -50,9 +50,9 @@ def plot_matches(matches, kp1, kp2, img1, img2, mask = None):
     plt.show()
 
 def draw_gaze(img, coord):
-    coord = coord.astype(np.int32)
-    img = cv.circle(img, coord, radius = 25, thickness = 2, color = (0, 0, 255))
-    img = cv.circle(img, coord, radius = 6, thickness = -1, color = (0, 0, 255))
+    [x, y] = coord.astype(np.int32)
+    img = cv.circle(img, (x, y), radius = 25, thickness = 2, color = (0, 0, 255))
+    img = cv.circle(img, (x, y), radius = 6, thickness = -1, color = (0, 0, 255))
     return img
 
 def combine_images(rt_img, etg_img, sf):
@@ -72,13 +72,10 @@ def combine_images(rt_img, etg_img, sf):
 def print_gaze(rt_img, etg_img, rt_coords, etg_coords):
     rt_img_cpy = np.copy(rt_img)
     etg_img_cpy = np.copy(etg_img)
-    for rt_c, etg_c in zip(rt_coords, etg_coords):
-        rt_img_cpy = draw_gaze(rt_img_cpy, rt_c)
-        etg_img_cpy = draw_gaze(etg_img_cpy, etg_c)
+    rt_img_cpy = draw_gaze(rt_img_cpy, rt_coords)
+    etg_img_cpy = draw_gaze(etg_img_cpy, etg_coords)
     conc_imgs = combine_images(rt_img_cpy, etg_img_cpy, sf = 0.5)
     cv.imshow("Combined cameras", conc_imgs)
-    if (cv.waitKey(1) & 0xFF == ord("q")):
-        return False
 
 
 def mesh_gaze_coords(nx, ny, img):
