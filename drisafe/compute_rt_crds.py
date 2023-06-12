@@ -4,6 +4,7 @@ from drisafe.constants import _recordings
 from drisafe import homography
 import cv2 as cv
 import pandas as pd
+import numpy as np
 from multiprocessing import Process
 
 
@@ -12,9 +13,14 @@ def calc_rt_crds(sen_stream):
     etg_frame_gray = cv.cvtColor(sen_stream.etg_frame, cv.COLOR_BGR2GRAY)
     rt_kp, rt_des = homography.SIFT(rt_frame_gray)
     etg_kp, etg_des = homography.SIFT(etg_frame_gray)
-    matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
-    H, mask = homography.estimate_homography(etg_kp, rt_kp, matches)
-    rt_crds = homography.project_gaze(sen_stream.etg_crd, H)
+    if not (len(rt_kp) >= 4 and len(etg_kp) >= 4):
+        rt_crds = np.empty((1, 2))
+        rt_crds[:] = np.nan
+        print("Written NaN.")
+    else:
+        matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
+        H, mask = homography.estimate_homography(etg_kp, rt_kp, matches)
+        rt_crds = homography.project_gaze(sen_stream.etg_crd, H)
     return rt_crds.reshape(2)
 
 def writer(rec_id):
@@ -36,8 +42,9 @@ def writer(rec_id):
     print("Data saved.")
     
 if __name__ == "__main__":
-    NUM_PROCS = 47
+    NUM_PROCS = 37
     rec_ids = range(NUM_PROCS)
+    #rec_ids = [1]
     procs = []
     for id in rec_ids:
         p = Process(target = writer, args = (id,))

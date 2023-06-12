@@ -4,7 +4,7 @@
 
 import pathlib
 
-DS_PATH = pathlib.Path("F:/Veoneer/Datasets/Dr(eye)ve/DREYEVE_DATA")
+DS_PATH = pathlib.Path("C:/Users/Alberto/Desktop/Datasets/Dr(eye)ve/DREYEVE_DATA")
 _recordings = [d for d in list(DS_PATH.iterdir()) if d.is_dir()]
 RT_VID_PATHS = [s / "video_garmin.avi" for s in _recordings]
 ETG_VID_PATHS = [s / "video_etg.avi" for s in _recordings]
