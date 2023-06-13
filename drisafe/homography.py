@@ -50,7 +50,7 @@ def plot_matches(matches, kp1, kp2, img1, img2, mask = None):
     plt.show()
 
 def draw_gaze(img, coord):
-    [x, y] = coord.astype(np.int32)
+    [[[x, y]]] = coord.astype(np.int32)
     img = cv.circle(img, (x, y), radius = 25, thickness = 2, color = (0, 0, 255))
     img = cv.circle(img, (x, y), radius = 6, thickness = -1, color = (0, 0, 255))
     return img
@@ -84,7 +84,7 @@ def mesh_gaze_coords(nx, ny, img):
     x = np.linspace(0, width, nx, dtype = np.int32)
     y = np.linspace(0, height, ny, dtype = np.int32)
     xv, yv = np.meshgrid(x, y, indexing = "xy")
-    pts = np.dstack((xv, yv)).reshape(-1, 2)
+    pts = np.dstack((xv, yv)).reshape(1, -1, 2)
     return pts
 
 def estimate_homography(kp1, kp2, matches, verbose = False):
@@ -94,11 +94,13 @@ def estimate_homography(kp1, kp2, matches, verbose = False):
     if verbose:
         print(f"(KNN thresh: {KNN_THRESH}, RANSAC thresh: {RANSAC_THRESH}) - " \
               f"{np.count_nonzero(mask)} keypoints detected.")
+        if H is None:
+            print("H matrix cannot be estimated.")
     return H, mask
 
 def project_gaze(etg_coords, H):
-    etg_coords = etg_coords.reshape(1, -1, 2).astype(np.float32)
-    rt_coords = cv.perspectiveTransform(etg_coords, H).reshape(-1, 2)
+    etg_coords = etg_coords.astype(np.float32)
+    rt_coords = cv.perspectiveTransform(etg_coords, H)
     return rt_coords
 
 def show_sift_kp_imgs(img1, img2):
@@ -115,8 +117,10 @@ if __name__ == "__main__":
     etg_kp, etg_des = SIFT(etg_img_gray)
     matches = match_keypoints(etg_des, rt_des, threshold = KNN_THRESH)
     H, mask = estimate_homography(etg_kp, rt_kp, matches, verbose = True)
-    #etg_coords = np.array([[791, 464]])
-    etg_coords = mesh_gaze_coords(nx = 5, ny = 5, img = etg_img_gray)
+    etg_coords = np.array([[[184.07, 426.95]]])
+    #etg_coords = mesh_gaze_coords(nx = 5, ny = 5, img = etg_img_gray)  (To correct the code for multiple gazes)
     rt_coords = project_gaze(etg_coords, H)
+    print(rt_coords)
     plot_matches(matches, etg_kp, rt_kp, etg_img_bgr, rt_img_bgr, mask)
     print_gaze(etg_img_bgr, rt_img_bgr, etg_coords, rt_coords)
+    cv.waitKey(0)

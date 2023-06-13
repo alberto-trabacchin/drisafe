@@ -53,7 +53,7 @@ class SensorStreams(object):
         self.etg_status = True
         self.rt_frame = None
         self.rt_status = True
-        self.t_step = 0
+        self.t_step = 17800
         self.online = True
         self.rec_id = rec_id
 
@@ -80,7 +80,7 @@ class SensorStreams(object):
             self.etg_cap.set(cv.CAP_PROP_POS_FRAMES, etg_frame_no)
             self.rt_status, self.rt_frame = self.rt_cap.read()
             self.etg_status, self.etg_frame = self.etg_cap.read()
-            self.etg_crd = self.ds_tracker.iloc[self.t_step][["X", "Y"]].to_numpy()
+            self.etg_crd = self.ds_tracker.iloc[self.t_step][["X", "Y"]].to_numpy().reshape(1, 1, 2)
             if not self.ds_rt_crds.empty:
                 self.rt_crd = self.ds_rt_crds.iloc[self.t_step][["X", "Y"]].to_numpy()
             self.t_step += 1

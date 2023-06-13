@@ -14,14 +14,21 @@ def calc_rt_crds(sen_stream):
     rt_kp, rt_des = homography.SIFT(rt_frame_gray)
     etg_kp, etg_des = homography.SIFT(etg_frame_gray)
     if not (len(rt_kp) >= 4 and len(etg_kp) >= 4):
-        rt_crds = np.empty((1, 2))
-        rt_crds[:] = np.nan
-        print("Written NaN.")
+        rt_crds = write_empty_crds()
     else:
         matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
         H, mask = homography.estimate_homography(etg_kp, rt_kp, matches)
-        rt_crds = homography.project_gaze(sen_stream.etg_crd, H)
-    return rt_crds.reshape(2)
+        if H is None:
+            rt_crds = write_empty_crds()
+        else:
+            rt_crds = homography.project_gaze(sen_stream.etg_crd, H)
+    return rt_crds
+
+def write_empty_crds():
+    rt_crds = np.empty((1, 1, 2))
+    rt_crds[:] = np.nan
+    print("Written NaN.")
+    return rt_crds
 
 def writer(rec_id):
     print(f"Ran process {rec_id}.")
@@ -33,7 +40,7 @@ def writer(rec_id):
         if not sen_stream.online: break
         rt_crds = calc_rt_crds(sen_stream)
         print(f"({sen_stream.rec_id}-{sen_stream.t_step}) - RT gaze: {rt_crds}")
-        [x, y] = rt_crds
+        [[[x, y]]] = rt_crds
         ds_rt_crd = pd.concat([ds_rt_crd, pd.DataFrame([{"X": x, "Y": y}])], ignore_index=True)
         #homography.print_gaze(sen_stream.rt_frame, sen_stream.etg_frame, rt_crds, sen_stream.etg_crd)
         #if (cv.waitKey(1) & 0xFF == ord("q")):
@@ -42,9 +49,9 @@ def writer(rec_id):
     print("Data saved.")
     
 if __name__ == "__main__":
-    NUM_PROCS = 37
-    rec_ids = range(NUM_PROCS)
-    #rec_ids = [1]
+    #NUM_PROCS = 37
+    #rec_ids = range(NUM_PROCS)
+    rec_ids = [1]
     procs = []
     for id in rec_ids:
         p = Process(target = writer, args = (id,))
