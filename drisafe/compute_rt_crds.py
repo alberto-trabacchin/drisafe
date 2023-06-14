@@ -13,10 +13,10 @@ def calc_rt_crds(sen_stream):
     etg_frame_gray = cv.cvtColor(sen_stream.etg_frame, cv.COLOR_BGR2GRAY)
     rt_kp, rt_des = homography.SIFT(rt_frame_gray)
     etg_kp, etg_des = homography.SIFT(etg_frame_gray)
-    if not (len(rt_kp) >= 4 and len(etg_kp) >= 4):
+    matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
+    if len(matches) < 4:
         rt_crds = write_empty_crds()
     else:
-        matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
         H, mask = homography.estimate_homography(etg_kp, rt_kp, matches)
         if H is None:
             rt_crds = write_empty_crds()
@@ -49,11 +49,12 @@ def writer(rec_id):
     print("Data saved.")
     
 if __name__ == "__main__":
-    #NUM_PROCS = 37
-    #rec_ids = range(NUM_PROCS)
-    rec_ids = [1]
+    rec_ids1 = range(0, 25)
+    rec_ids2 = range(25, 50)
+    rec_ids3 = range(50, 74)
+    tmp = [4]
     procs = []
-    for id in rec_ids:
+    for id in tmp:
         p = Process(target = writer, args = (id,))
         procs.append(p)
         p.start()

@@ -53,7 +53,7 @@ class SensorStreams(object):
         self.etg_status = True
         self.rt_frame = None
         self.rt_status = True
-        self.t_step = 17800
+        self.t_step = 8145
         self.online = True
         self.rec_id = rec_id
 
