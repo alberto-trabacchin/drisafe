@@ -44,16 +44,17 @@ class SensorStreams(object):
         self.ds_tracker = ds_tracker.dropna(axis = "rows", how = "any")
         if (self.etg_tracker["rt_crd_path"].is_file()):
             self.ds_rt_crds = pd.read_csv(str(self.etg_tracker["rt_crd_path"]), header = 0)
+            print(f"{rec_id} - RT coords available.")
         else:
             self.ds_rt_crds = pd.DataFrame({"X": [], "Y": []})
-            print("No RT coords data available.")
+            print(f"{rec_id} - No RT coords data available.")
         self.etg_crd = 0
         self.rt_crd = 0
         self.etg_frame = None
         self.etg_status = True
         self.rt_frame = None
         self.rt_status = True
-        self.t_step = 8145
+        self.t_step = 0
         self.online = True
         self.rec_id = rec_id
 

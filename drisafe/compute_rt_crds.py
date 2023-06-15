@@ -15,19 +15,19 @@ def calc_rt_crds(sen_stream):
     etg_kp, etg_des = homography.SIFT(etg_frame_gray)
     matches = homography.match_keypoints(etg_des, rt_des, threshold = homography.KNN_THRESH)
     if len(matches) < 4:
-        rt_crds = write_empty_crds()
+        rt_crds = write_empty_crds("Not enough matches.")
     else:
         H, mask = homography.estimate_homography(etg_kp, rt_kp, matches)
         if H is None:
-            rt_crds = write_empty_crds()
+            rt_crds = write_empty_crds("Minimization not reached.")
         else:
             rt_crds = homography.project_gaze(sen_stream.etg_crd, H)
     return rt_crds
 
-def write_empty_crds():
+def write_empty_crds(message):
     rt_crds = np.empty((1, 1, 2))
     rt_crds[:] = np.nan
-    print("Written NaN.")
+    print(f"{message}. Written NaN.")
     return rt_crds
 
 def writer(rec_id):
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     rec_ids3 = range(50, 74)
     tmp = [4]
     procs = []
-    for id in tmp:
+    for id in rec_ids1:
         p = Process(target = writer, args = (id,))
         procs.append(p)
         p.start()
