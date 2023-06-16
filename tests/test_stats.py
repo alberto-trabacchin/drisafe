@@ -23,7 +23,7 @@ class TestStats(unittest.TestCase):
 
         sensor.rt_crd = rt_crds #Temporary
         ref_gaze_areas_count = np.zeros((stat.ny + 2, stat.nx + 2))
-        ref_gaze_areas_count[2, 2] = 1
+        ref_gaze_areas_count[2, 1] = 1
         stat.find_gaze_area(sensor, verbose = False)
         np.testing.assert_array_equal(stat.gaze_areas_count, ref_gaze_areas_count, 
                                       "Area ID should be 4.")
