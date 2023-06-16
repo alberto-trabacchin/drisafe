@@ -81,7 +81,7 @@ class SensorStreams(object):
             self.etg_status, self.etg_frame = self.etg_cap.read()
             self.etg_crd = self.ds_tracker.iloc[self.t_step][["X", "Y"]].to_numpy().reshape(1, 1, 2)
             if not self.ds_rt_crds.empty:
-                self.rt_crd = self.ds_rt_crds.iloc[self.t_step][["X", "Y"]].to_numpy()
+                self.rt_crd = self.ds_rt_crds.iloc[self.t_step][["X", "Y"]].to_numpy(dtype=np.float32).reshape(1, 1, 2)
             self.t_step += 1
         else:
             self.rt_status = False
