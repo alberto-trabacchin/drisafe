@@ -1,0 +1,16 @@
+Bottleneck @ file:///opt/conda/conda-bld/bottleneck_1657175564434/work
+distlib==0.3.6
+filelock==3.12.2
+mkl-service==2.4.0
+numexpr @ file:///croot/numexpr_1683221822650/work
+numpy @ file:///croot/numpy_and_numpy_base_1682520569166/work
+pandas==1.5.3
+pbr==5.11.1
+platformdirs==3.5.3
+python-dateutil @ file:///tmp/build/80754af9/python-dateutil_1626374649649/work
+pytz @ file:///croot/pytz_1671697431263/work
+six @ file:///tmp/build/80754af9/six_1644875935023/work
+stevedore==5.1.0
+virtualenv==20.23.0
+virtualenv-clone==0.5.7
+virtualenvwrapper==4.8.4
