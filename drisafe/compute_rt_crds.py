@@ -1,6 +1,6 @@
 from drisafe.sensorstreams import SensorStreams
 from drisafe.constants import SENSORS
-from drisafe.constants import _recordings
+from drisafe.config.paths import _recordings
 from drisafe import homography
 import cv2 as cv
 import pandas as pd
