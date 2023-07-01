@@ -2,6 +2,8 @@ import numpy as np
 from drisafe.constants import SENSORS
 from drisafe.sensorstreams import SensorStreams
 import multiprocessing as mp
+from matplotlib import pyplot as plt
+import matplotlib.colors as mclr
 
 class Stats(object):
     def __init__(self, nx = 4, ny = 3):
@@ -36,6 +38,10 @@ class Stats(object):
                 print(f"({sstream.rec_id}-{idx}) --> {x_count, y_count}")
         return self
     
+def show_gaze_areas(gaze_mat):
+    plt.imshow(gaze_mat)
+    plt.show()
+    
 def worker(id, nx, ny, ret_dic):
     sstream = SensorStreams(SENSORS[id], id)
     stats = Stats(nx, ny)
@@ -48,7 +54,7 @@ def worker(id, nx, ny, ret_dic):
 
 if __name__ == "__main__":
     nx, ny = 7, 3
-    rec_ids = range(0, 20)
+    rec_ids = range(0, 2)
     manager = mp.Manager()
     ret_dic = manager.dict()
     jobs = []
@@ -64,3 +70,6 @@ if __name__ == "__main__":
         print(f"Recording ID: {rec_id}")
         print(f"Total samples: {np.sum(gaze_mat)}")
         print(f"{gaze_mat} \n")
+    sor_ret = sorted(ret_dic.values(), key = lambda x : x["rec_id"])
+    show_gaze_areas(sor_ret[0]["gaze_mat"])
+    
