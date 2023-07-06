@@ -38,6 +38,10 @@ class Stats(object):
                 print(f"({sstream.rec_id}-{idx}) --> {x_count, y_count}")
         return self
     
+def show_gaze_areas(gaze_mat):
+    plt.imshow(gaze_mat)
+    plt.show()
+    
 def worker(id, nx, ny, ret_dic):
     sstream = SensorStreams(SENSORS[id], id)
     stats = Stats(nx, ny)
@@ -74,3 +78,5 @@ if __name__ == "__main__":
         sns.heatmap(gaze_mat, vmin = 0, vmax = 5)
         plt.show()
         print(f"{rec_id}")
+        sor_ret = sorted(ret_dic.values(), key = lambda x : x["rec_id"])
+        show_gaze_areas(sor_ret[0]["gaze_mat"])
