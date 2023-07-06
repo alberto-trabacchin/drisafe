@@ -2,6 +2,8 @@ import numpy as np
 from drisafe.constants import SENSORS
 from drisafe.sensorstreams import SensorStreams
 import multiprocessing as mp
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class Stats(object):
     def __init__(self, nx = 4, ny = 3):
@@ -45,10 +47,15 @@ def worker(id, nx, ny, ret_dic):
         "rec_id": id + 1,
         "gaze_mat": stats.gaze_areas_count
         }
+    
+def plot_data(gaze_mat):
+    print(f"Plotting recording No. {rec_id}.")
+    sns.heatmap(gaze_mat, vmin = 0, vmax = 5)
+    
 
 if __name__ == "__main__":
-    nx, ny = 7, 3
-    rec_ids = range(0, 20)
+    nx, ny = 700, 300
+    rec_ids = range(10, 15)
     manager = mp.Manager()
     ret_dic = manager.dict()
     jobs = []
@@ -64,3 +71,6 @@ if __name__ == "__main__":
         print(f"Recording ID: {rec_id}")
         print(f"Total samples: {np.sum(gaze_mat)}")
         print(f"{gaze_mat} \n")
+        sns.heatmap(gaze_mat, vmin = 0, vmax = 5)
+        plt.show()
+        print(f"{rec_id}")
