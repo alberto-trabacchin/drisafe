@@ -52,9 +52,9 @@ if __name__ == "__main__":
     rec_ids1 = range(0, 25)
     rec_ids2 = range(25, 50)
     rec_ids3 = range(50, 74)
-    tmp = [4]
+    missing_ids = [52, 53, 55, 56, 57, 60, 61, 62, 63, 66, 67, 69, 71, 72]
     procs = []
-    for id in rec_ids1:
+    for id in missing_ids:
         p = Process(target = writer, args = (id,))
         procs.append(p)
         p.start()

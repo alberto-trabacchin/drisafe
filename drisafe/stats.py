@@ -131,9 +131,11 @@ def plot_weather_driver_distrib(df):
     plt.show()
     #plt.savefig(RESULTS_PATH / "weather_driver_distrib.png", dpi = 800)
 
-def plot_data(gaze_mat):
+def plot_data(sample):
+    rec_id = sample["rec_id"]
+    gaze_mat = sample["gaze_mat"]
     print(f"Plotting recording No. {rec_id}.")
-    sns.heatmap(gaze_mat, vmin = 0, vmax = 1)
+    sns.heatmap(gaze_mat, vmin = 0, vmax = 1, cbar = True)
     plt.xticks([])
     plt.yticks([])
     plt.show()
@@ -144,8 +146,8 @@ if __name__ == "__main__":
     #plot_area_driver_distrib(df_design)
     #plot_daytime_driver_distrib(df_design)
     #plot_weather_driver_distrib(df_design)
-    nx, ny = 700, 300
-    rec_ids = range(0, 74)
+    nx, ny = 7, 3
+    rec_ids = range(70, 74)
     manager = mp.Manager()
     ret_dic = manager.dict()
     jobs = []
@@ -162,4 +164,4 @@ if __name__ == "__main__":
         print(f"Total samples: {np.sum(gaze_mat)}")
         print(f"{gaze_mat} \n")
     sor_ret = sorted(ret_dic.values(), key = lambda x : x["rec_id"])
-    plot_data(sor_ret[0]["gaze_mat"])
+    plot_data(sor_ret[1])
