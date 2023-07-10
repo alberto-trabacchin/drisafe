@@ -75,11 +75,19 @@ class SensorStreams(object):
         if (self.t_step < self.ds_tracker.shape[0]):
             rt_frame_no = self.ds_tracker.iloc[self.t_step]["frame_gar"]
             etg_frame_no = self.ds_tracker.iloc[self.t_step]["frame_etg"]
-            self.rt_cap.set(cv.CAP_PROP_POS_FRAMES, rt_frame_no)
-            self.etg_cap.set(cv.CAP_PROP_POS_FRAMES, etg_frame_no)
-            self.rt_status, self.rt_frame = self.rt_cap.read()
-            self.etg_status, self.etg_frame = self.etg_cap.read()
             self.etg_crd = self.ds_tracker.iloc[self.t_step][["X", "Y"]].to_numpy().reshape(1, 1, 2)
+            #self.rt_cap.set(cv.CAP_PROP_POS_FRAMES, rt_frame_no)
+            #self.etg_cap.set(cv.CAP_PROP_POS_FRAMES, etg_frame_no)
+            if (self.t_step == 0):
+                self.rt_status, self.rt_frame = self.rt_cap.read()
+                self.etg_status, self.etg_frame = self.etg_cap.read()
+            else:
+                prev_rt_frame_no = self.ds_tracker.iloc[self.t_step - 1]["frame_gar"]
+                prev_etg_frame_no = self.ds_tracker.iloc[self.t_step - 1]["frame_etg"]
+                if (prev_rt_frame_no < rt_frame_no):
+                    self.rt_status, self.rt_frame = self.rt_cap.read()
+                if (prev_etg_frame_no < etg_frame_no):
+                    self.etg_status, self.etg_frame = self.etg_cap.read()
             if not self.ds_rt_crds.empty:
                 self.rt_crd = self.ds_rt_crds.iloc[self.t_step][["X", "Y"]].to_numpy(dtype=np.float32).reshape(1, 1, 2)
             self.t_step += 1
