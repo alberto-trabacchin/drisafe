@@ -6,6 +6,7 @@ import multiprocessing as mp
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import itertools
 from matplotlib import rcParams
 
 class Stats(object):
@@ -131,23 +132,51 @@ def plot_weather_driver_distrib(df):
     plt.show()
     #plt.savefig(RESULTS_PATH / "weather_driver_distrib.png", dpi = 800)
 
-def plot_data(sample):
-    rec_id = sample["rec_id"]
+def plot_gaze(sample):
     gaze_mat = sample["gaze_mat"]
-    print(f"Plotting recording No. {rec_id}.")
-    sns.heatmap(gaze_mat, vmin = 0, vmax = 1, cbar = True)
+    weather = sample["weather"]
+    time = sample["time"]
+    area = sample["area"]
+    sns.heatmap(gaze_mat, vmin = 0, vmax = 5, cbar = True)
     plt.xticks([])
     plt.yticks([])
+    plt.title(f"{area}, {time}, {weather}")
     plt.show()
-    
+
+def select_subset_gazes(gaze_list, df, weather, time, area, nx, ny):
+    ids = df.loc[(df["weather"] == weather) & (df["time"] == time) & (df["area"] == area)].index
+    subset_gazes = [gaze_list[i]["gaze_mat"] for i in ids if i < len(gaze_list)]
+    if not subset_gazes:
+        gaze_mat = np.zeros(shape = (ny, nx))
+    else:
+        gaze_mat = sum(subset_gazes)
+    return dict(
+        gaze_mat = gaze_mat,
+        weather = weather,
+        time = time,
+        area = area
+    )
+
+def plot_gaze_groups(gaze_list, df_design, nx, ny):
+    gaze_groups_list = []
+    weathers = df_design["weather"].unique()
+    times = df_design["time"].unique()
+    areas = df_design["area"].unique()
+    for scenario in list(itertools.product(weathers, times, areas)):
+        w, t, a = scenario
+        gaze_sub_dic = select_subset_gazes(gaze_list, df_design, w, t, a, nx, ny)
+        gaze_groups_list.append(gaze_sub_dic)
+    for gg in gaze_groups_list:
+        if gg["gaze_mat"].any() != 0:
+            plot_gaze(gg)
 
 if __name__ == "__main__":
     df_design = read_ds_design()
     #plot_area_driver_distrib(df_design)
     #plot_daytime_driver_distrib(df_design)
     #plot_weather_driver_distrib(df_design)
-    nx, ny = 7, 3
-    rec_ids = range(70, 74)
+    nx, ny = 700, 300
+    rec_ids = range(0, 45)
     manager = mp.Manager()
     ret_dic = manager.dict()
     jobs = []
@@ -158,10 +187,13 @@ if __name__ == "__main__":
     for proc in jobs:
         proc.join()
     for res in ret_dic.values():
+        # Not printing gaze matrices
+        break
         rec_id = res["rec_id"]
         gaze_mat = res["gaze_mat"]
         print(f"Recording ID: {rec_id}")
         print(f"Total samples: {np.sum(gaze_mat)}")
         print(f"{gaze_mat} \n")
-    sor_ret = sorted(ret_dic.values(), key = lambda x : x["rec_id"])
-    plot_data(sor_ret[1])
+    gaze_list = sorted(ret_dic.values(), key = lambda x : x["rec_id"])
+    #plot_gaze(gaze_list[0])
+    plot_gaze_groups(gaze_list, df_design, nx, ny)
