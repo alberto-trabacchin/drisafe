@@ -1,9 +1,12 @@
 import numpy as np
 from drisafe.constants import SENSORS
+from drisafe.config.paths import DS_DESIGN_PATH, RESULTS_PATH
 from drisafe.sensorstreams import SensorStreams
 import multiprocessing as mp
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib import rcParams
 
 class Stats(object):
     def __init__(self, nx = 4, ny = 3):
@@ -51,15 +54,98 @@ def worker(id, nx, ny, ret_dic):
         "rec_id": id + 1,
         "gaze_mat": stats.gaze_areas_count
         }
-    
+
+def read_ds_design():
+    col_names = ["rec_id", "time", "weather", "area", "driver_id", "test"]
+    df_design = pd.read_csv(DS_DESIGN_PATH, names = col_names, header = None, 
+                            sep='\t')
+    return df_design
+
+def plot_area_driver_distrib(df):
+    fontsize = 12
+    ticksize = 10
+    labelsize = 10
+    plt.clf()
+    rcParams['figure.figsize'] = 2, 2
+    p = sns.countplot(data=df, x='driver_id', hue='area', edgecolor=None,
+                      palette=['#CD2626',"green", "darkblue"],
+                      order = ["D1", "D2", "D3", "D4", "D5", "D6"],
+                      hue_order=["Highway", "Countryside", "Downtown"])
+    p.legend(title='Area', bbox_to_anchor=(1, 1), loc='upper left')
+    plt.setp(p.get_legend().get_texts(), fontsize=labelsize) # for legend text
+    plt.setp(p.get_legend().get_title(), fontsize=labelsize) # for legend title
+    p.set_xticklabels(["D1", "D2", "D3", "D4", "D5", "D6"], size = ticksize)
+    for c in p.containers:
+        # set the bar label
+        p.bar_label(c, fmt='%.0f', label_type='edge')
+    plt.yticks([])
+    plt.xlabel("Driver ID", fontsize = fontsize)
+    plt.ylabel("# Recordings", fontsize = fontsize)
+    plt.tight_layout()
+    plt.show()
+    #plt.savefig(RESULTS_PATH / "area_driver_distrib.png", dpi = 800)
+
+def plot_daytime_driver_distrib(df):
+    fontsize = 12
+    ticksize = 10
+    labelsize = 10
+    plt.clf()
+    rcParams['figure.figsize'] = 2, 2
+    p = sns.countplot(data=df, x='driver_id', hue='time', edgecolor=None,
+                      palette=['#CD2626',"green", "darkblue"],
+                      order = ["D1", "D2", "D3", "D4", "D5", "D6"],
+                      hue_order=["Morning", "Evening", "Night"])
+    p.legend(title='Daytime', bbox_to_anchor=(1, 1), loc='upper left')
+    plt.setp(p.get_legend().get_texts(), fontsize=labelsize) # for legend text
+    plt.setp(p.get_legend().get_title(), fontsize=labelsize) # for legend title
+    p.set_xticklabels(["D1", "D2", "D3", "D4", "D5", "D6"], size = ticksize)
+    for c in p.containers:
+        p.bar_label(c, fmt='%.0f', label_type='edge')
+    plt.yticks([])
+    plt.xlabel("Driver ID", fontsize = fontsize)
+    plt.ylabel("# Recordings", fontsize = fontsize)
+    plt.tight_layout()
+    plt.show()
+    #plt.savefig(RESULTS_PATH / "daytime_driver_distrib.png", dpi = 800)
+
+def plot_weather_driver_distrib(df):
+    fontsize = 12
+    ticksize = 10
+    labelsize = 10
+    plt.clf()
+    rcParams['figure.figsize'] = 2, 2
+    p = sns.countplot(data=df, x='driver_id', hue='weather', edgecolor=None,
+                      palette=['#CD2626',"green", "darkblue"],
+                      order = ["D1", "D2", "D3", "D4", "D5", "D6"],
+                      hue_order=["Sunny", "Cloudy", "Rainy"])
+    p.legend(title='Weather', bbox_to_anchor=(1, 1), loc='upper left')
+    plt.setp(p.get_legend().get_texts(), fontsize=labelsize) # for legend text
+    plt.setp(p.get_legend().get_title(), fontsize=labelsize) # for legend title
+    p.set_xticklabels(["D1", "D2", "D3", "D4", "D5", "D6"], size = ticksize)
+    for c in p.containers:
+        p.bar_label(c, fmt='%.0f', label_type='edge')
+    plt.yticks([])
+    plt.xlabel("Driver ID", fontsize = fontsize)
+    plt.ylabel("# Recordings", fontsize = fontsize)
+    plt.tight_layout()
+    plt.show()
+    #plt.savefig(RESULTS_PATH / "weather_driver_distrib.png", dpi = 800)
+
 def plot_data(gaze_mat):
     print(f"Plotting recording No. {rec_id}.")
-    sns.heatmap(gaze_mat, vmin = 0, vmax = 5)
+    sns.heatmap(gaze_mat, vmin = 0, vmax = 1)
+    plt.xticks([])
+    plt.yticks([])
+    plt.show()
     
 
 if __name__ == "__main__":
+    df_design = read_ds_design()
+    #plot_area_driver_distrib(df_design)
+    #plot_daytime_driver_distrib(df_design)
+    #plot_weather_driver_distrib(df_design)
     nx, ny = 700, 300
-    rec_ids = range(10, 15)
+    rec_ids = range(0, 74)
     manager = mp.Manager()
     ret_dic = manager.dict()
     jobs = []
@@ -75,8 +161,5 @@ if __name__ == "__main__":
         print(f"Recording ID: {rec_id}")
         print(f"Total samples: {np.sum(gaze_mat)}")
         print(f"{gaze_mat} \n")
-        sns.heatmap(gaze_mat, vmin = 0, vmax = 5)
-        plt.show()
-        print(f"{rec_id}")
-        sor_ret = sorted(ret_dic.values(), key = lambda x : x["rec_id"])
-        show_gaze_areas(sor_ret[0]["gaze_mat"])
+    sor_ret = sorted(ret_dic.values(), key = lambda x : x["rec_id"])
+    plot_data(sor_ret[0]["gaze_mat"])
