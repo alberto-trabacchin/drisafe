@@ -5,7 +5,8 @@ from drisafe import homography
 import cv2 as cv
 import pandas as pd
 import numpy as np
-from multiprocessing import Process
+import multiprocessing as mp
+from multiprocessing import Process, Queue
 
 
 def calc_rt_crds(sen_stream):
@@ -30,9 +31,14 @@ def write_empty_crds(message):
     print(f"{message}. Written NaN.")
     return rt_crds
 
-def writer(rec_id):
-    print(f"Ran process {rec_id}.")
-    sen_stream = SensorStreams(SENSORS[rec_id], rec_id)
+def save_rt_crds(data):
+    rt_crds = data["rt_crds"]
+    rt_crds.to_csv(data["path"])
+    print(f"Recording {data['rec_id']} saved.")
+
+def worker(id, queue):
+    print(f"Ran process {id}.")
+    sen_stream = SensorStreams(SENSORS[id - 1], id)
     rt_crd_path = sen_stream.etg_tracker["rt_crd_path"]
     ds_rt_crd = pd.DataFrame({"X": [], "Y": []})
     while True:
@@ -42,22 +48,21 @@ def writer(rec_id):
         print(f"({sen_stream.rec_id}-{sen_stream.t_step}) - RT gaze: {rt_crds}")
         [[[x, y]]] = rt_crds
         ds_rt_crd = pd.concat([ds_rt_crd, pd.DataFrame([{"X": x, "Y": y}])], ignore_index=True)
-        #homography.print_gaze(sen_stream.rt_frame, sen_stream.etg_frame, rt_crds, sen_stream.etg_crd)
-        #if (cv.waitKey(1) & 0xFF == ord("q")):
-        #    break
-    ds_rt_crd.to_csv(rt_crd_path)
-    print("Data saved.")
+    queue.put({
+        "rec_id": id,
+        "rt_crds": ds_rt_crd,
+        "path": rt_crd_path
+    })
     
 if __name__ == "__main__":
-    rec_ids1 = range(0, 25)
-    rec_ids2 = range(25, 50)
-    rec_ids3 = range(50, 74)
-    missing_ids = [52, 53, 55, 56, 57, 60, 61, 62, 63, 66, 67, 69, 71, 72]
-    procs = []
-    for id in missing_ids:
-        p = Process(target = writer, args = (id,))
-        procs.append(p)
+    rec_ids = [60, 66, 69]
+    queue = Queue()
+    jobs = []
+    for id in rec_ids:
+        p = Process(target = worker, args = (id, queue))
+        jobs.append(p)
         p.start()
-    for p in procs:
-        p.join()
-        
+    for proc in jobs:
+        proc.join()
+    while not queue.empty():
+        save_rt_crds(data = queue.get())
