@@ -4,7 +4,7 @@ import torch
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
 
-if __name__ == "__main__":
+def detect():
     model = YOLO("yolov8x.pt")
     image_path = "media/rt_camera_sample_1.png"
     image = torchvision.io.read_image(image_path)
@@ -28,4 +28,13 @@ if __name__ == "__main__":
                                       colors = "red",
                                       width = 2)
     plt.imshow(boxes_image.permute(1, 2, 0))
-    plt.show()
+    #plt.show()
+
+def track():
+    pass
+
+def estim_depth():
+    pass
+
+if __name__ == "__main__":
+    pass
