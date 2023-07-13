@@ -5,8 +5,41 @@ import matplotlib.pyplot as plt
 from ultralytics import YOLO
 import numpy as np
 import cv2
+from drisafe.config.paths import TRACKING_DATA_PATH
 from drisafe.constants import SENSORS
-from PIL import Image
+from drisafe.sensorstreams import SensorStreams
+import json
+
+class Person(object):
+
+    def __init__(self, id):
+        self.data = {
+            "id": id,
+            "appeared": [],
+            "observed": [],
+            "boxes": [],
+            "score": [],
+            "position": [],
+            "rt_gaze": []
+        }
+
+    def update(self, gaze_crds, box, score, frame_n, rec_id):
+        box = box.reshape(4).tolist()
+        gaze_crds = gaze_crds.reshape(2).tolist()
+        xb1, yb1, xb2, yb2 = box[0], box[1], box[2], box[3]
+        xg, yg = gaze_crds[0], gaze_crds[1]
+        self.data["appeared"].append(frame_n)
+        self.data["boxes"].append(box)
+        self.data["score"].append(float(score))
+        xp = (xb2 + xb1) / 2
+        yp = (yb2 + yb1) / 2
+        self.data["position"].append([xp, yp])
+        if (xg > xb1 and xg < xb2 and yg > yb1 and yg < yb2):
+            self.data["observed"].append(True)
+        else:
+            self.data["observed"].append(False)
+        self.data["rt_gaze"].append(gaze_crds)
+        print(f"({rec_id}, {frame_n}) - Pedestrian score: {score:.3f} - {self.data['observed'][-1]}")
 
 def eval():
     xres = 1080
@@ -50,46 +83,76 @@ def detect():
     plt.imshow(boxes_image.permute(1, 2, 0))
     plt.show()
 
-def track():
-    sensor = SENSORS[5]
-    vid_path = sensor["roof_cam"]["vid_path"]
+
+def update_track_data(people_list, ids, boxes, scores, gaze_crds, frame_n, rec_id):
+    for id, box, score in zip(ids, boxes, scores):
+        det_people_ids = [p.data["id"] for p in people_list]
+        if not id in det_people_ids:
+            pers = Person(id)
+            pers.update(gaze_crds, box, score, frame_n, rec_id)
+            people_list.append(pers)
+        else:
+            pos = det_people_ids.index(id)
+            people_list[pos].update(gaze_crds, box, score, frame_n, rec_id)
+
+def get_people_data(results, rec_id, frame_n):
+    boxes = results[0].boxes.xyxy.cpu().numpy().astype(int)
+    ids = results[0].boxes.id.cpu().numpy().astype(int)
+    labels = results[0].boxes.cls.cpu()
+    scores = results[0].boxes.conf.cpu().numpy()
+    ped_boxes = []
+    ped_scores = []
+    ped_ids = []
+    for b, l, s, id in zip(boxes, labels, scores, ids):
+        if l == 0 and s > 0.5:
+            ped_boxes.append(b[0:4])
+            ped_scores.append(s)
+            ped_ids.append(id)
+            #print(f"({rec_id}, {frame_n}) - Pedestrian score: {s:.3f}.")
+    return ped_boxes, ped_scores, ped_ids
+
+def draw_bbox(frame, box, id):
+    cv2.rectangle(frame, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 2)
+    cv2.putText(
+        frame,
+        f"id: {id}",
+        (box[0], box[1] - 5),
+        cv2.FONT_HERSHEY_COMPLEX_SMALL,
+        1,
+        (0, 0, 255),
+        2,
+        )
+
+def track_people(rec_id):
+    sstream = SensorStreams(SENSORS[rec_id - 1], rec_id)
     model = YOLO("yolov8x.pt")
-    cap = cv2.VideoCapture(str(vid_path))
-    ped_boxes_all_rec = []
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        results = model.track(frame, persist = True, verbose = False, tracker="bytetrack.yaml")
-        boxes = results[0].boxes.xyxy.cpu().numpy().astype(int)
-        ids = results[0].boxes.id.cpu().numpy().astype(int)
-        labels = results[0].boxes.cls.cpu()
-        scores = results[0].boxes.conf.cpu().numpy()
-        ped_boxes = []
-        ped_scores = []
-        ped_ids = []
-        for b, l, s, id in zip(boxes, labels, scores, ids):
-            if l == 0 and s > 0.5:
-                ped_boxes.append(b[0:4])
-                ped_scores.append(str(s)[0:4])
-                ped_ids.append(id)
-                print(f"Pedestrians score: {s:.3f}.")
-        ped_boxes_all_rec.append(ped_boxes)
-        for box, id in zip(ped_boxes, ped_ids):
-            cv2.rectangle(frame, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 2)
-            cv2.putText(
-                frame,
-                f"id: {id}",
-                (box[0], box[1] - 5),
-                cv2.FONT_HERSHEY_COMPLEX_SMALL,
-                1,
-                (0, 0, 255),
-                2,
-            )
-        cv2.imshow("frame", frame)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-    
+    people_list = []
+    print(f"Computing recording {rec_id}...")
+    while True:
+        sstream.read()
+        frame = sstream.rt_frame
+        results = model.track(frame, persist = True, verbose = False, tracker = "bytetrack.yaml")
+        if results[0].boxes.id != None:
+            frame_n = sstream.t_step
+            ped_boxes, ped_scores, ped_ids = get_people_data(results, rec_id, frame_n)
+            update_track_data(people_list, ped_ids, ped_boxes, ped_scores, 
+                              sstream.rt_crd, frame_n, rec_id)
+        #    for box, id in zip(ped_boxes, ped_ids):
+        #        draw_bbox(frame, box, id)
+        #cv2.imshow("frame", frame)
+        #if (cv2.waitKey(1) & 0xFF == ord("q")): break
+        if not sstream.online: break
+    print([p.data for p in people_list])
+    print(f"Recoring {rec_id} ended.")
+    return people_list
+
+def write_track_data(people_data, id):
+    list_data = [p.data for p in people_data]
+    print(list_data)
+    data_path = TRACKING_DATA_PATH[id - 1]
+    json_data = json.dumps(list_data, indent = 4, default = int)
+    with open(data_path, "w") as outfile:
+        outfile.write(json_data)
 
 def estim_depth():
     image_path = "media/rt_camera_sample_2.png"
@@ -120,5 +183,7 @@ def estim_depth():
     plt.show()
 
 if __name__ == "__main__":
-    #estim_depth()
-    track()
+    rec_ids = [6, 4, 6, 7, 10, 11, 12, 13, 16, 18, 19, 26, 27, 35, 38, 39, 40, 47, 51, 53, 58, 60, 61, 64, 65, 70, 72]
+    for id in rec_ids:
+        people_data_rec = track_people(id)
+        write_track_data(people_data_rec, id)
