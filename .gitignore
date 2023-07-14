@@ -166,3 +166,6 @@ cython_debug/
 # Virtual environment
 /envdrisafe/
 /yolov8x.pt
+
+# Plots
+/results/plots

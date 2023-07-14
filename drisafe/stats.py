@@ -1,6 +1,6 @@
 import numpy as np
 from drisafe.constants import SENSORS
-from drisafe.config.paths import DS_DESIGN_PATH, RESULTS_PATH
+from drisafe.config.paths import DS_DESIGN_PATH, TRACKING_DATA_PATH
 from drisafe.sensorstreams import SensorStreams
 import multiprocessing as mp
 import seaborn as sns
@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import itertools
 from matplotlib import rcParams
+import json
 
 class Stats(object):
     def __init__(self, nx = 4, ny = 3):
@@ -170,13 +171,13 @@ def plot_gaze_groups(gaze_list, df_design, nx, ny):
         if gg["gaze_mat"].any() != 0:
             plot_gaze(gg)
 
-if __name__ == "__main__":
-    df_design = read_ds_design()
-    #plot_area_driver_distrib(df_design)
-    #plot_daytime_driver_distrib(df_design)
-    #plot_weather_driver_distrib(df_design)
-    nx, ny = 700, 300
-    rec_ids = range(0, 45)
+def compute_gaze_areas_distribution(df_design):
+    plot_area_driver_distrib(df_design)
+    plot_daytime_driver_distrib(df_design)
+    plot_weather_driver_distrib(df_design)
+
+def compute_gaze_matrices(nx, ny):
+    rec_ids = range(0, 75)
     manager = mp.Manager()
     ret_dic = manager.dict()
     jobs = []
@@ -186,14 +187,43 @@ if __name__ == "__main__":
         p.start()
     for proc in jobs:
         proc.join()
-    for res in ret_dic.values():
-        # Not printing gaze matrices
-        break
-        rec_id = res["rec_id"]
-        gaze_mat = res["gaze_mat"]
-        print(f"Recording ID: {rec_id}")
-        print(f"Total samples: {np.sum(gaze_mat)}")
-        print(f"{gaze_mat} \n")
     gaze_list = sorted(ret_dic.values(), key = lambda x : x["rec_id"])
-    #plot_gaze(gaze_list[0])
-    plot_gaze_groups(gaze_list, df_design, nx, ny)
+    return gaze_list
+
+def read_tracking_data():
+    rec_ids = [4, 6, 7, 10, 11, 12, 13, 16, 18, 19, 26, 27, 35, 38, 39, 40, 47, 51, 53, 58, 60, 61, 64, 65, 70, 72]
+    track_data = []
+    for id in rec_ids:
+        data_path = TRACKING_DATA_PATH[id - 1]
+        with open(data_path) as json_file:
+            data = json.load(json_file)
+            track_data.append(data)
+    return track_data
+
+def get_people_gaze_info(track_data):
+    observ_data = []
+    gaze_time_series = []
+    positive_counts = []
+    total_counts = []
+    for rec_data in track_data:
+        for person in rec_data:
+            observ_data.append(person["observed"])
+            positive_counts.append(person["observed"].count(True))
+            total_counts.append(len(person["observed"]))
+    positive_seconds = int(sum(positive_counts) / 30)
+    total_seconds = int(sum(total_counts) / 30)
+    print(f"# positive gaze matchings: {sum(positive_counts)} frames (~{positive_seconds} seconds).")
+    print(f"# total gaze matchings: {sum(total_counts)} frames (~{total_seconds} seconds).")
+    print(f"# positive different tracking times: {len(np.unique(positive_counts))}.")
+    print(f"# total different tracking times: {len(np.unique(total_counts))}.")
+    print(f"# different people detected: {len(observ_data)}.")
+    return observ_data
+
+if __name__ == "__main__":
+    nx, ny = 700, 300
+    #df_design = read_ds_design()
+    #compute_gaze_areas_distribution(df_design)
+    #gaze_list = compute_gaze_matrices(nx, ny)
+    #plot_gaze_groups(gaze_list, df_design, nx, ny)
+    track_data = read_tracking_data()
+    get_people_gaze_info(track_data)

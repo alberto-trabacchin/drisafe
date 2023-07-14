@@ -184,6 +184,7 @@ def estim_depth():
 
 if __name__ == "__main__":
     rec_ids = [4, 6, 7, 10, 11, 12, 13, 16, 18, 19, 26, 27, 35, 38, 39, 40, 47, 51, 53, 58, 60, 61, 64, 65, 70, 72]
+    rec_ids = [i for i in range(1, 75)]
     for id in rec_ids:
         people_data_rec = track_people(id)
         write_track_data(people_data_rec, id)
