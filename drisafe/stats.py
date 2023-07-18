@@ -190,8 +190,7 @@ def compute_gaze_matrices(nx, ny):
     gaze_list = sorted(ret_dic.values(), key = lambda x : x["rec_id"])
     return gaze_list
 
-def read_tracking_data():
-    rec_ids = [4, 6, 7, 10, 11, 12, 13, 16, 18, 19, 26, 27, 35, 38, 39, 40, 47, 51, 53, 58, 60, 61, 64, 65, 70, 72]
+def read_tracking_data(rec_ids):    
     track_data = []
     for id in rec_ids:
         data_path = TRACKING_DATA_PATH[id - 1]
@@ -225,5 +224,5 @@ if __name__ == "__main__":
     #compute_gaze_areas_distribution(df_design)
     #gaze_list = compute_gaze_matrices(nx, ny)
     #plot_gaze_groups(gaze_list, df_design, nx, ny)
-    track_data = read_tracking_data()
+    track_data = read_tracking_data(rec_ids = range(1, 75))
     get_people_gaze_info(track_data)
