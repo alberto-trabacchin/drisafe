@@ -9,6 +9,7 @@ import pandas as pd
 import itertools
 from matplotlib import rcParams
 import json
+from collections import Counter
 
 class Stats(object):
     def __init__(self, nx = 4, ny = 3):
@@ -199,9 +200,22 @@ def read_tracking_data(rec_ids):
             track_data.append(data)
     return track_data
 
+def get_obsv_data(track_data):
+    obsv_data = []
+    for rec_data in track_data:
+        for person in rec_data:
+            obsv_data.append(person["observed"])
+    return obsv_data
+
+def count_obsv_data(obsv_data):
+    pos_obsv_counter = Counter([obsv.count(True) for obsv in obsv_data if obsv.count(True)])
+    pos_obsv_keys = list(pos_obsv_counter.keys())
+    pos_obsv_keys.sort()
+    pos_obsv = {i: pos_obsv_counter[i] for i in pos_obsv_keys}
+    return pos_obsv
+
 def get_people_gaze_info(track_data):
     observ_data = []
-    gaze_time_series = []
     positive_counts = []
     total_counts = []
     for rec_data in track_data:
@@ -218,6 +232,14 @@ def get_people_gaze_info(track_data):
     print(f"# different people detected: {len(observ_data)}.")
     return observ_data
 
+def get_relevant_data(track_data, min_frames = 15):
+    rel_people = []
+    for rec_data in track_data:
+        for person in rec_data:
+            if person["observed"].count(True) >= min_frames:
+                rel_people.append(person)
+    return rel_people
+
 if __name__ == "__main__":
     nx, ny = 700, 300
     #df_design = read_ds_design()
@@ -225,4 +247,6 @@ if __name__ == "__main__":
     #gaze_list = compute_gaze_matrices(nx, ny)
     #plot_gaze_groups(gaze_list, df_design, nx, ny)
     track_data = read_tracking_data(rec_ids = range(1, 75))
-    get_people_gaze_info(track_data)
+    #get_people_gaze_info(track_data)
+    rel_data = get_relevant_data(track_data, min_frames = 10)
+    print(len(rel_data))
