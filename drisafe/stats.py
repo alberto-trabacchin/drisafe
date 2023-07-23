@@ -178,7 +178,7 @@ def compute_gaze_areas_distribution(df_design):
     plot_weather_driver_distrib(df_design)
 
 def compute_gaze_matrices(nx, ny):
-    rec_ids = range(0, 75)
+    rec_ids = range(0, 74)
     manager = mp.Manager()
     ret_dic = manager.dict()
     jobs = []
@@ -202,10 +202,12 @@ def read_tracking_data(rec_ids):
 
 def get_obsv_data(track_data):
     obsv_data = []
+    appear_data = []
     for rec_data in track_data:
         for person in rec_data:
             obsv_data.append(person["observed"])
-    return obsv_data
+            appear_data.append(person["appeared"])
+    return obsv_data, appear_data
 
 def count_obsv_data(obsv_data):
     pos_obsv_counter = Counter([obsv.count(True) for obsv in obsv_data if obsv.count(True)])
@@ -240,13 +242,25 @@ def get_relevant_data(track_data, min_frames = 15):
                 rel_people.append(person)
     return rel_people
 
+def get_gaze_to_people_timeseries(rec_ids, tmin = 0.5):
+    track_data = read_tracking_data(rec_ids)
+    obsv_data, appear_data = get_obsv_data(track_data)
+    valid_obsv = []
+    valid_appear = []
+    for app, obsv in zip(appear_data, obsv_data):
+        if obsv.count(True) >= int(tmin * 30):
+            valid_obsv.append(obsv)
+            valid_appear.append(app)
+    return valid_obsv, valid_appear
+
+
 if __name__ == "__main__":
     nx, ny = 700, 300
-    #df_design = read_ds_design()
+    df_design = read_ds_design()
     #compute_gaze_areas_distribution(df_design)
     #gaze_list = compute_gaze_matrices(nx, ny)
     #plot_gaze_groups(gaze_list, df_design, nx, ny)
-    track_data = read_tracking_data(rec_ids = range(1, 75))
+    #track_data = read_tracking_data(rec_ids = range(1, 75))
     #get_people_gaze_info(track_data)
-    rel_data = get_relevant_data(track_data, min_frames = 10)
-    print(len(rel_data))
+    #rel_data = get_relevant_data(track_data, min_frames = 10)
+    get_gazes_freq(range(1, 75))

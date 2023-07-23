@@ -168,4 +168,7 @@ cython_debug/
 /yolov8x.pt
 
 # Plots
-/results/plots
+/results/glances_gridmaps
+/results/glances_timeseries
+/results/old
+results/stats
