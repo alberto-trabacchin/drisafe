@@ -263,4 +263,4 @@ if __name__ == "__main__":
     #track_data = read_tracking_data(rec_ids = range(1, 75))
     #get_people_gaze_info(track_data)
     #rel_data = get_relevant_data(track_data, min_frames = 10)
-    get_gazes_freq(range(1, 75))
+    get_gaze_to_people_timeseries(range(1, 75))
