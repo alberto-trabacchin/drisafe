@@ -234,13 +234,15 @@ def get_people_gaze_info(track_data):
     print(f"# different people detected: {len(observ_data)}.")
     return observ_data
 
-def get_relevant_data(track_data, min_frames = 15):
-    rel_people = []
+def get_valid_data(track_data, min_frames = 15):
+    val_people_data = []
     for rec_data in track_data:
+        val_people = []
         for person in rec_data:
             if person["observed"].count(True) >= min_frames:
-                rel_people.append(person)
-    return rel_people
+                val_people.append(person)
+        val_people_data.append(val_people)
+    return val_people_data
 
 def get_gaze_to_people_timeseries(rec_ids, tmin = 0.5):
     track_data = read_tracking_data(rec_ids)
@@ -253,6 +255,17 @@ def get_gaze_to_people_timeseries(rec_ids, tmin = 0.5):
             valid_appear.append(app)
     return valid_obsv, valid_appear
 
+def view_gaze_people_matching_frames(val_data, ids):
+    for track, id in zip(val_data, ids):
+        if not track: continue
+        for person in track:
+            sstream = SensorStreams(SENSORS[id - 1], id, t_step = person["appeared"][0])
+            while True:
+                sstream.read(show_gaze_crd = False)
+                print(sstream.etg_crd)
+                sstream.plot_frame(show_gazes = True)
+                if not sstream.online: break
+
 
 if __name__ == "__main__":
     nx, ny = 700, 300
@@ -260,7 +273,8 @@ if __name__ == "__main__":
     #compute_gaze_areas_distribution(df_design)
     #gaze_list = compute_gaze_matrices(nx, ny)
     #plot_gaze_groups(gaze_list, df_design, nx, ny)
-    #track_data = read_tracking_data(rec_ids = range(1, 75))
+    track_data = read_tracking_data(rec_ids = range(1, 75))
     #get_people_gaze_info(track_data)
-    #rel_data = get_relevant_data(track_data, min_frames = 10)
-    get_gaze_to_people_timeseries(range(1, 75))
+    val_data = get_valid_data(track_data, min_frames = 15)
+    valid_obsv, valid_appear = get_gaze_to_people_timeseries(range(1, 75))
+    view_gaze_people_matching_frames(val_data, ids = range(1, 75))

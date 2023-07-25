@@ -27,7 +27,7 @@ class SensorStreams(object):
         online: Flag which indicates if sensors are no longer available for reading.
     """
 
-    def __init__(self, sensor, rec_id):
+    def __init__(self, sensor, rec_id, t_step = 0):
         """
         Initializes the instance based on sensors parameters.
 
@@ -42,17 +42,21 @@ class SensorStreams(object):
         ds_tracker = pd.read_csv(str(self.etg_tracker["etg_crd_path"]), 
                                           delim_whitespace = True)
         self.ds_tracker = ds_tracker.dropna(axis = "rows", how = "any")
+        start_rt_frame = ds_tracker.iloc[t_step]["frame_gar"]
+        start_etg_frame = ds_tracker.iloc[t_step]["frame_etg"]
+        self.rt_cap.set(cv.CAP_PROP_POS_FRAMES, start_rt_frame)
+        self.etg_cap.set(cv.CAP_PROP_POS_FRAMES, start_etg_frame)
         if (self.etg_tracker["rt_crd_path"].is_file()):
             self.ds_rt_crds = pd.read_csv(str(self.etg_tracker["rt_crd_path"]), header = 0)
         else:
             self.ds_rt_crds = pd.DataFrame({"X": [], "Y": []})
-        self.etg_crd = 0
-        self.rt_crd = 0
+        self.etg_crd = np.array([[[0, 0]]])
+        self.rt_crd = np.array([[[0, 0]]])
         self.etg_frame = None
         self.etg_status = True
         self.rt_frame = None
         self.rt_status = True
-        self.t_step = 0
+        self.t_step = t_step
         self.online = True
         self.rec_id = rec_id
 
@@ -84,9 +88,9 @@ class SensorStreams(object):
             else:
                 prev_rt_frame_no = self.ds_tracker.iloc[self.t_step - 1]["frame_gar"]
                 prev_etg_frame_no = self.ds_tracker.iloc[self.t_step - 1]["frame_etg"]
-                if (prev_rt_frame_no < rt_frame_no):
+                if ((prev_rt_frame_no < rt_frame_no) or (self.rt_crd == np.array([[[0, 0]]])).all()):
                     self.rt_status, self.rt_frame = self.rt_cap.read()
-                if (prev_etg_frame_no < etg_frame_no):
+                if ((prev_etg_frame_no < etg_frame_no) or (self.rt_crd == np.array([[[0, 0]]])).all()):
                     self.etg_status, self.etg_frame = self.etg_cap.read()
             if not self.ds_rt_crds.empty:
                 self.rt_crd = self.ds_rt_crds.iloc[self.t_step][["X", "Y"]].to_numpy(dtype=np.float32).reshape(1, 1, 2)
@@ -117,8 +121,8 @@ class SensorStreams(object):
         etg_frame = np.copy(self.etg_frame)
         rt_frame = np.copy(self.rt_frame)
         if (show_gazes):
-            rt_crd = np.copy(self.rt_crd).reshape(2)
-            etg_crd = np.copy(self.etg_crd).reshape(2)
+            rt_crd = np.copy(self.rt_crd)
+            etg_crd = np.copy(self.etg_crd)
             rt_frame = homography.draw_gaze(rt_frame, rt_crd)
             etg_frame = homography.draw_gaze(etg_frame, etg_crd)
         etg_h = etg_frame.shape[0]
@@ -132,7 +136,7 @@ class SensorStreams(object):
         etg_w = int(etg_frame_ar * rt_h)
         etg_frame = cv.resize(etg_frame, (etg_w, etg_h))
         conc_frames = np.concatenate((etg_frame, rt_frame), axis = 1)
-        cv.imshow("Cameras", conc_frames)
+        cv.imshow(f"Cameras - REC {self.rec_id}", conc_frames)
         if (cv.waitKey(1) & 0xFF == ord("q")):
             self.close()
 
@@ -147,8 +151,8 @@ class SensorStreams(object):
         print("Sensors closed.")
 
 if __name__ == '__main__':
-    sens_stream = SensorStreams(SENSORS[0])
+    sstream = SensorStreams(SENSORS[0], 1)
     while True:
-        sens_stream.read(show_gaze_crd = True)
-        sens_stream.plot_frame(show_gazes = False)
-        if not sens_stream.online: break
+        sstream.read(show_gaze_crd = True)
+        sstream.plot_frame(show_gazes = True)
+        if not sstream.online: break
