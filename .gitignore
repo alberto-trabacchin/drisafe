@@ -172,3 +172,4 @@ cython_debug/
 /results/glances_timeseries
 /results/old
 results/stats
+/tmp.py
