@@ -71,7 +71,6 @@ def worker(rec_id):
         data["H"].append(H)
         data["mask"].append(mask)
         stream.show_coordinates()
-        if stream.t_step == 20: break
     stream.close()
     return data
 
