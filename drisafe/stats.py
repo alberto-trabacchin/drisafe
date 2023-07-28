@@ -10,6 +10,7 @@ import itertools
 from matplotlib import rcParams
 import json
 from collections import Counter
+import cv2 as cv
 
 class Stats(object):
     def __init__(self, nx = 4, ny = 3):
@@ -257,14 +258,40 @@ def get_gaze_to_people_timeseries(rec_ids, tmin = 0.5):
 
 def view_gaze_people_matching_frames(val_data, ids):
     for track, id in zip(val_data, ids):
+        #id = 11
+        #track = val_data[10]
         if not track: continue
-        for person in track:
-            sstream = SensorStreams(SENSORS[id - 1], id, t_step = person["appeared"][0])
+        for p_count, person in enumerate(track):
+            first_frame = person["appeared"][0]
+            last_frame = person["appeared"][-1]
+            count = 0
+            sstream = SensorStreams(SENSORS[id - 1], id, t_step = first_frame)
+            #frame_width = int(sstream.rt_cam.get(3) + sstream.etg_cam.get(3))
+            #frame_height = int(sstream.rt_cam.get(4))
+            size = (3360, 1080)
+            result = cv.VideoWriter(f"/mnt/c/Users/Alberto/Desktop/tmp/{id}_{p_count}.avi", 
+                         cv.VideoWriter_fourcc('M','J','P','G'),
+                         30, size)
             while True:
                 sstream.read(show_gaze_crd = False)
-                print(sstream.etg_crd)
-                sstream.plot_frame(show_gazes = True)
-                if not sstream.online: break
+                if (person["appeared"][count] == sstream.t_step - 1):
+                    print(sstream.t_step - 1)
+                    count += 1
+                    # Draw bboxes
+                    box_crds = [int(c) for c in person["boxes"][count]]
+                    sstream.rt_frame = cv.rectangle(img = sstream.rt_frame,
+                                                    pt1 = (box_crds[0], box_crds[1]),
+                                                    pt2 = (box_crds[2], box_crds[3]),
+                                                    color = [100, 255, 0],
+                                                    thickness = 2)
+                    cv.putText(sstream.rt_frame, str(person["id"]), (box_crds[0], box_crds[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 0), 2)
+                frame = sstream.plot_frame(show_gazes = True)
+                result.write(frame)
+                if sstream.t_step == last_frame:
+                    sstream.close()
+                if not sstream.online:
+                    result.release()
+                    break
 
 
 if __name__ == "__main__":
@@ -275,6 +302,6 @@ if __name__ == "__main__":
     #plot_gaze_groups(gaze_list, df_design, nx, ny)
     track_data = read_tracking_data(rec_ids = range(1, 75))
     #get_people_gaze_info(track_data)
-    val_data = get_valid_data(track_data, min_frames = 15)
+    val_data = get_valid_data(track_data, min_frames = 5)
     valid_obsv, valid_appear = get_gaze_to_people_timeseries(range(1, 75))
     view_gaze_people_matching_frames(val_data, ids = range(1, 75))

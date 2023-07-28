@@ -127,8 +127,8 @@ class SensorStreams(object):
             etg_frame = homography.draw_gaze(etg_frame, etg_crd)
         etg_h = etg_frame.shape[0]
         etg_w = etg_frame.shape[1]
-        rt_h = int(0.5 * rt_frame.shape[0])
-        rt_w = int(0.5 * rt_frame.shape[1])
+        rt_h = int(rt_frame.shape[0])
+        rt_w = int(rt_frame.shape[1])
         rt_frame = cv.resize(rt_frame, (rt_w, rt_h))
         etg_frame = cv.resize(etg_frame, (etg_w, etg_h))
         etg_frame_ar = etg_w / float(etg_h)
@@ -136,9 +136,14 @@ class SensorStreams(object):
         etg_w = int(etg_frame_ar * rt_h)
         etg_frame = cv.resize(etg_frame, (etg_w, etg_h))
         conc_frames = np.concatenate((etg_frame, rt_frame), axis = 1)
-        cv.imshow(f"Cameras - REC {self.rec_id}", conc_frames)
+        win_name = f"Cameras - REC {self.rec_id}"
+        cv.namedWindow(win_name, cv.WND_PROP_FULLSCREEN)          
+        #cv.setWindowProperty(win_name, cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+        cv.imshow(win_name, conc_frames)
+        print(conc_frames.shape)
         if (cv.waitKey(1) & 0xFF == ord("q")):
             self.close()
+        return conc_frames
 
     def close(self):
         """
@@ -151,7 +156,7 @@ class SensorStreams(object):
         print("Sensors closed.")
 
 if __name__ == '__main__':
-    sstream = SensorStreams(SENSORS[0], 1)
+    sstream = SensorStreams(SENSORS[10], 11, t_step = 6600)
     while True:
         sstream.read(show_gaze_crd = True)
         sstream.plot_frame(show_gazes = True)

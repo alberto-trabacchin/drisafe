@@ -51,8 +51,8 @@ def plot_matches(matches, kp1, kp2, img1, img2, mask = None):
 
 def draw_gaze(img, coord):
     [[[x, y]]] = coord.astype(np.int32)
-    img = cv.circle(img, (x, y), radius = 25, thickness = 2, color = (0, 0, 255))
-    img = cv.circle(img, (x, y), radius = 6, thickness = -1, color = (0, 0, 255))
+    img = cv.circle(img, (x, y), radius = 20, thickness = 2, color = (0, 0, 255))
+    img = cv.circle(img, (x, y), radius = 4, thickness = -1, color = (0, 0, 255))
     return img
 
 def combine_images(rt_img, etg_img, sf):

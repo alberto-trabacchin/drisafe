@@ -7,6 +7,7 @@ from drisafe import homography
 class Camera(object):
 
     def __init__(self, rec_id, model):
+        self.rec_id = rec_id
         sensor = SENSORS[rec_id - 1]
         cam = sensor[model]
         if (model == "roof_cam"):
@@ -21,7 +22,7 @@ class Camera(object):
         self.status = True
 
     def set_start_frame(self, frame_no):
-        self.cap.set(cv.CAP_PROP_POS_FRAMES, frame_no)
+        self.cap.set(cv.CAP_PROP_POS_FRAMES, frame_no - 1)
         print(f"{self.model} set to frame {frame_no}.")
 
     def get_frame_count(self):
@@ -35,12 +36,11 @@ class Camera(object):
 
     def read_frame(self):
         self.status, self.frame = self.cap.read()
-        print(self.frame.shape)
     
     def close(self):
         self.cap.release()
         cv.destroyAllWindows()
-        print(f"{self.model} closed.")
+        print(f"({self.rec_id}) {self.model} closed.")
     
 
 class SStream(object):
@@ -99,7 +99,7 @@ class SStream(object):
     def valid_coords(self):
         return not (np.isnan(np.sum(self.rt_cam.gaze_crd)) or np.isnan(np.sum(self.etg_cam.gaze_crd)))
 
-    def show_frames_side(self, show_gazes = False):
+    def show_frames_side(self, fullscreen = False, show_gazes = False):
         etg_frame = np.copy(self.etg_cam.frame)
         rt_frame = np.copy(self.rt_cam.frame)
         if (show_gazes and self.valid_coords()):
@@ -109,8 +109,12 @@ class SStream(object):
             etg_frame = homography.draw_gaze(etg_frame, etg_crd)
         etg_h = etg_frame.shape[0]
         etg_w = etg_frame.shape[1]
-        rt_h = int(0.5 * rt_frame.shape[0])
-        rt_w = int(0.5 * rt_frame.shape[1])
+        if fullscreen:
+            rt_h = int(rt_frame.shape[0])
+            rt_w = int(rt_frame.shape[1])
+        else:
+            rt_h = int(0.5 * rt_frame.shape[0])
+            rt_w = int(0.5 * rt_frame.shape[1])
         rt_frame = cv.resize(rt_frame, (rt_w, rt_h))
         etg_frame = cv.resize(etg_frame, (etg_w, etg_h))
         etg_frame_ar = etg_w / float(etg_h)
@@ -118,7 +122,11 @@ class SStream(object):
         etg_w = int(etg_frame_ar * rt_h)
         etg_frame = cv.resize(etg_frame, (etg_w, etg_h))
         conc_frames = np.concatenate((etg_frame, rt_frame), axis = 1)
-        cv.imshow(f"REC{self.rec_id}", conc_frames)
+        win_name = f"REC{self.rec_id}"
+        if fullscreen:
+            cv.namedWindow(win_name, cv.WND_PROP_FULLSCREEN)
+            cv.setWindowProperty(win_name, cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+        cv.imshow(win_name, conc_frames)
         if (cv.waitKey(1) & 0xFF == ord("q")):
             self.online = False
     
@@ -130,7 +138,7 @@ class SStream(object):
 
     def set_init_frames(self, rt_frame_no):
         data = self.etg_data
-        sel_data = data.loc[data["frame_gar"] > rt_frame_no]
+        sel_data = data.loc[data["frame_gar"] >= rt_frame_no]
         sample = sel_data.iloc[0]
         self.t_step = sample.name
         etg_frame_no = sample.frame_etg
@@ -145,11 +153,12 @@ class SStream(object):
 
 
 if __name__ == "__main__":
-    stream = SStream(rec_id = 1)
+    stream = SStream(rec_id = 6)
     stream.set_init_frames(rt_frame_no = 1000)
     while stream.online:
         stream.read()
-        stream.show_frames_side(show_gazes = True)
+        stream.show_frames_side(fullscreen = True,
+                                show_gazes = True)
         stream.show_coordinates()
     stream.close()
 
