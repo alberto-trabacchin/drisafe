@@ -7,7 +7,7 @@ import numpy as np
 import cv2
 from drisafe.config.paths import TRACKING_DATA_PATH
 from drisafe.constants import SENSORS
-from drisafe.sensorstreams import SensorStreams
+from drisafe.sstream import SStream
 import json
 
 class Person(object):
@@ -124,7 +124,7 @@ def draw_bbox(frame, box, id):
         )
 
 def track_people(rec_id):
-    sstream = SensorStreams(SENSORS[rec_id - 1], rec_id)
+    sstream = SStream(rec_id)
     model = YOLO("yolov8x.pt")
     people_list = []
     print(f"Computing recording {rec_id}...")

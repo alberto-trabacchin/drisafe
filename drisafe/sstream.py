@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from drisafe.constants import SENSORS
 from drisafe import homography
+import json
 
 class Camera(object):
 
@@ -56,9 +57,10 @@ class SStream(object):
                                     delim_whitespace = True,
                                     index_col = False)
         if (rt_data_path.is_file()):
-            self.rt_data = pd.read_csv(rt_data_path,
-                                       index_col = 0)
+            f = open(rt_data_path)
+            self.rt_data = json.load(f)
             self.rt_data_avail = True
+            f.close()
         else:
             self.rt_data = pd.DataFrame({"X": [], "Y": []})
             self.rt_data_avail = False
@@ -77,11 +79,10 @@ class SStream(object):
                 self.rt_cam.read_frame()
             while (self.etg_cam.get_frame_count() <= etg_frame_id):
                 self.etg_cam.read_frame()
-            if self.rt_data_avail:
-                self.rt_cam.gaze_crd = np.array([
-                        self.rt_data.iloc[self.t_step]["X"],
-                        self.rt_data.iloc[self.t_step]["Y"],
-                    ]).reshape(1, 1, 2)
+            if (self.rt_data_avail) and (self.t_step < len(self.rt_data["rt_crd"])):
+                self.rt_cam.gaze_crd = np.array(
+                    self.rt_data["rt_crd"][self.t_step]
+                )
             self.t_step += 1
         else:
             self.online = False
@@ -154,7 +155,7 @@ class SStream(object):
 
 if __name__ == "__main__":
     stream = SStream(rec_id = 6)
-    stream.set_init_frames(rt_frame_no = 1000)
+    stream.set_init_frames(rt_frame_no = 0)
     while stream.online:
         stream.read()
         stream.show_frames_side(fullscreen = True,

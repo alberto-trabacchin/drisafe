@@ -1,7 +1,7 @@
 import numpy as np
 from drisafe.constants import SENSORS
 from drisafe.config.paths import DS_DESIGN_PATH, TRACKING_DATA_PATH
-from drisafe.sensorstreams import SensorStreams
+from drisafe.sstream import SStream
 import multiprocessing as mp
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -50,7 +50,7 @@ def show_gaze_areas(gaze_mat):
     plt.show()
     
 def worker(id, nx, ny, ret_dic):
-    sstream = SensorStreams(SENSORS[id], id)
+    sstream = SStream(id)
     stats = Stats(nx, ny)
     sstream.read()
     stats.calc_all_gaze_matrix(sstream, verbose = False)
@@ -265,7 +265,7 @@ def view_gaze_people_matching_frames(val_data, ids):
             first_frame = person["appeared"][0]
             last_frame = person["appeared"][-1]
             count = 0
-            sstream = SensorStreams(SENSORS[id - 1], id, t_step = first_frame)
+            sstream = SStream(id, t_step = first_frame)
             #frame_width = int(sstream.rt_cam.get(3) + sstream.etg_cam.get(3))
             #frame_height = int(sstream.rt_cam.get(4))
             size = (3360, 1080)

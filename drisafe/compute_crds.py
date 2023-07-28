@@ -43,6 +43,18 @@ def get_rt_crds(stream):
             rt_crd = homography.project_gaze(etg_crd, H)
     return rt_crd, H, mask
 
+def save_default(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    raise TypeError('Not serializable')
+
+def write_data(results):
+    for res in results:
+        id = res["id"]
+        data_path = SENSORS[id - 1]["gaze_track"]["rt_crd_path"]
+        with open(data_path, 'w') as fl:
+            json.dump(res, fl, default = save_default, indent = 2)
+
 def worker(rec_id):
     print(f"Running process {rec_id}.")
     stream = SStream(rec_id)
@@ -58,10 +70,8 @@ def worker(rec_id):
         data["rt_crd"].append(rt_crd)
         data["H"].append(H)
         data["mask"].append(mask)
-        print(f"({rec_id}, {stream.t_step}) ETG: {stream.etg_cam.gaze_crd}")
-        print(f"({rec_id}, {stream.t_step}) RT: {rt_crd}")
-        # Temporary
-        if stream.t_step == 10: break
+        stream.show_coordinates()
+        if stream.t_step == 20: break
     stream.close()
     return data
 
@@ -77,22 +87,10 @@ def run_workers(rec_ids, max_workers = 10):
         results.append(result)
     merged_results = list(itertools.chain(*results))
     return merged_results
-
-def save_default(obj):
-    if isinstance(obj, np.ndarray):
-        return obj.tolist()
-    raise TypeError('Not serializable')
-
-def write_data(results):
-    for res in results:
-        id = res["id"]
-        data_path = SENSORS[id - 1]["gaze_track"]["rt_crd_path"]
-        with open(data_path, 'w') as fl:
-            json.dump(res, fl, default = save_default)
-        
     
+
 if __name__ == "__main__":
-    rec_ids = range(1, 2)
+    rec_ids = range(1, 75)
     results = run_workers(rec_ids, max_workers = 10)
     print([r["id"] for r in results])
     write_data(results)
