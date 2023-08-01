@@ -29,6 +29,7 @@ def get_rt_crds(stream):
         nan_crds = True
     if (n_matches < 4):
         print("Not enough matches.")
+        rt_crd = get_empty_array(size = (1, 1, 2))
         H = get_empty_array(size = (3, 3))
         mask = get_empty_array(size = (n_matches, 1))
     else:
@@ -37,9 +38,8 @@ def get_rt_crds(stream):
             print("Minimization not reached.")
             H = get_empty_array(size = (3, 3))
             mask = get_empty_array(size = (n_matches, 1))
-            if not nan_crds:
-                rt_crd = get_empty_array(size = (1, 1, 2))
-        elif H is not None and not nan_crds:
+            rt_crd = get_empty_array(size = (1, 1, 2))
+        elif not nan_crds:
             rt_crd = homography.project_gaze(etg_crd, H)
     return rt_crd, H, mask
 
@@ -64,12 +64,14 @@ def worker(rec_id):
         "H": [],
         "mask": []
     }
-    while stream.online:
+    while True:
         stream.read()
+        if not stream.online: break
         rt_crd, H, mask  = get_rt_crds(stream)
         data["rt_crd"].append(rt_crd)
         data["H"].append(H)
         data["mask"].append(mask)
+        stream.rt_cam.gaze_crd = rt_crd
         stream.show_coordinates()
     stream.close()
     return data

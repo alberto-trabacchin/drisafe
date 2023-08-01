@@ -1,6 +1,6 @@
 import numpy as np
 from drisafe.constants import SENSORS
-from drisafe.config.paths import DS_DESIGN_PATH, TRACKING_DATA_PATH
+from drisafe.config.paths import DS_DESIGN_PATH, TRACKING_DATA_PATH, RESULTS_PATH
 from drisafe.sstream import SStream
 import multiprocessing as mp
 import seaborn as sns
@@ -69,16 +69,16 @@ def plot_area_driver_distrib(df):
     fontsize = 12
     ticksize = 10
     labelsize = 10
-    plt.clf()
-    rcParams['figure.figsize'] = 2, 2
-    p = sns.countplot(data=df, x='driver_id', hue='area', edgecolor=None,
+    fig, ax = plt.subplots(figsize=(7, 5))
+    p = sns.countplot(data=df, x='driver_id', hue='area', edgecolor="black",
                       palette=['#CD2626',"green", "darkblue"],
-                      order = ["D1", "D2", "D3", "D4", "D5", "D6"],
-                      hue_order=["Highway", "Countryside", "Downtown"])
+                      order = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"],
+                      hue_order=["Highway", "Countryside", "Downtown"],
+                      ax = ax)
     p.legend(title='Area', bbox_to_anchor=(1, 1), loc='upper left')
     plt.setp(p.get_legend().get_texts(), fontsize=labelsize) # for legend text
     plt.setp(p.get_legend().get_title(), fontsize=labelsize) # for legend title
-    p.set_xticklabels(["D1", "D2", "D3", "D4", "D5", "D6"], size = ticksize)
+    p.set_xticklabels(["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"], size = ticksize)
     for c in p.containers:
         # set the bar label
         p.bar_label(c, fmt='%.0f', label_type='edge')
@@ -87,22 +87,22 @@ def plot_area_driver_distrib(df):
     plt.ylabel("# Recordings", fontsize = fontsize)
     plt.tight_layout()
     plt.show()
-    #plt.savefig(RESULTS_PATH / "area_driver_distrib.png", dpi = 800)
+    fig.savefig(RESULTS_PATH / "stats/area_driver_distrib.png", dpi = 800)
 
 def plot_daytime_driver_distrib(df):
     fontsize = 12
     ticksize = 10
     labelsize = 10
-    plt.clf()
-    rcParams['figure.figsize'] = 2, 2
-    p = sns.countplot(data=df, x='driver_id', hue='time', edgecolor=None,
+    fig, ax = plt.subplots(figsize=(7, 5))
+    p = sns.countplot(data=df, x='driver_id', hue='time', edgecolor="black",
                       palette=['#CD2626',"green", "darkblue"],
-                      order = ["D1", "D2", "D3", "D4", "D5", "D6"],
-                      hue_order=["Morning", "Evening", "Night"])
+                      order = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"],
+                      hue_order=["Morning", "Evening", "Night"],
+                      ax = ax)
     p.legend(title='Daytime', bbox_to_anchor=(1, 1), loc='upper left')
     plt.setp(p.get_legend().get_texts(), fontsize=labelsize) # for legend text
     plt.setp(p.get_legend().get_title(), fontsize=labelsize) # for legend title
-    p.set_xticklabels(["D1", "D2", "D3", "D4", "D5", "D6"], size = ticksize)
+    p.set_xticklabels(["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"], size = ticksize)
     for c in p.containers:
         p.bar_label(c, fmt='%.0f', label_type='edge')
     plt.yticks([])
@@ -110,22 +110,22 @@ def plot_daytime_driver_distrib(df):
     plt.ylabel("# Recordings", fontsize = fontsize)
     plt.tight_layout()
     plt.show()
-    #plt.savefig(RESULTS_PATH / "daytime_driver_distrib.png", dpi = 800)
+    fig.savefig(RESULTS_PATH / "stats/daytime_driver_distrib.png", dpi = 800)
 
 def plot_weather_driver_distrib(df):
     fontsize = 12
     ticksize = 10
     labelsize = 10
-    plt.clf()
-    rcParams['figure.figsize'] = 2, 2
-    p = sns.countplot(data=df, x='driver_id', hue='weather', edgecolor=None,
+    fig, ax = plt.subplots(figsize=(7, 5))
+    p = sns.countplot(data=df, x='driver_id', hue='weather', edgecolor="black",
                       palette=['#CD2626',"green", "darkblue"],
-                      order = ["D1", "D2", "D3", "D4", "D5", "D6"],
-                      hue_order=["Sunny", "Cloudy", "Rainy"])
+                      order = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"],
+                      hue_order=["Sunny", "Cloudy", "Rainy"],
+                      ax = ax)
     p.legend(title='Weather', bbox_to_anchor=(1, 1), loc='upper left')
     plt.setp(p.get_legend().get_texts(), fontsize=labelsize) # for legend text
     plt.setp(p.get_legend().get_title(), fontsize=labelsize) # for legend title
-    p.set_xticklabels(["D1", "D2", "D3", "D4", "D5", "D6"], size = ticksize)
+    p.set_xticklabels(["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"], size = ticksize)
     for c in p.containers:
         p.bar_label(c, fmt='%.0f', label_type='edge')
     plt.yticks([])
@@ -133,7 +133,7 @@ def plot_weather_driver_distrib(df):
     plt.ylabel("# Recordings", fontsize = fontsize)
     plt.tight_layout()
     plt.show()
-    #plt.savefig(RESULTS_PATH / "weather_driver_distrib.png", dpi = 800)
+    fig.savefig(RESULTS_PATH / "stats/weather_driver_distrib.png", dpi = 800)
 
 def plot_gaze(sample):
     gaze_mat = sample["gaze_mat"]
@@ -300,6 +300,10 @@ if __name__ == "__main__":
     #compute_gaze_areas_distribution(df_design)
     #gaze_list = compute_gaze_matrices(nx, ny)
     #plot_gaze_groups(gaze_list, df_design, nx, ny)
+    plot_daytime_driver_distrib(df_design)
+    plot_area_driver_distrib(df_design)
+    plot_weather_driver_distrib(df_design)
+    exit(0)
     track_data = read_tracking_data(rec_ids = range(1, 75))
     #get_people_gaze_info(track_data)
     val_data = get_valid_data(track_data, min_frames = 5)
