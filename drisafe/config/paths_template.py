@@ -11,6 +11,7 @@ ETG_PROJ_DATA_PATHS = [s / "etg_proj_samples.json" for s in _recordings]
 GPS_PATHS = [s / "speed_course_coord.txt" for s in _recordings]
 RT_SAMPLE_PATH = pathlib.Path().absolute() / "media" / "rt_camera_sample_5.png"
 ETG_SAMPLE_PATH = pathlib.Path().absolute() / "media" / "etg_camera_sample_5.png"
+COMPUTE_CRDS_LOG_PATH = DS_PATH / "logs/compute_crds_log.txt"
 
 def _check_all(path_list, dtype = "file"):
     if dtype == "file":

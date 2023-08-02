@@ -173,3 +173,4 @@ cython_debug/
 /results/old
 results/stats
 /tmp.py
+/drisafe/logs/*

@@ -1,11 +1,11 @@
 from drisafe.sstream import SStream
 from drisafe import homography
 from drisafe.constants import SENSORS
-from multiprocessing import Pool
+from drisafe.config.paths import COMPUTE_CRDS_LOG_PATH
+from multiprocessing import Pool, Process
 import cv2 as cv
 import numpy as np
 import json
-import itertools
 
 def get_empty_array(size):
     arr = np.empty(size)
@@ -48,12 +48,12 @@ def save_default(obj):
         return obj.tolist()
     raise TypeError('Not serializable')
 
-def write_data(results):
-    for res in results:
-        id = res["id"]
-        data_path = SENSORS[id - 1]["gaze_track"]["rt_crd_path"]
-        with open(data_path, 'w') as fl:
-            json.dump(res, fl, default = save_default, indent = 2)
+def write_data(data):
+    id = data["id"]
+    data_path = SENSORS[id - 1]["gaze_track"]["rt_crd_path"]
+    with open(data_path, 'w') as fl:
+        json.dump(data, fl, default = save_default, indent = 2)
+    print(f"({id}) Data written.")
 
 def worker(rec_id):
     print(f"Running process {rec_id}.")
@@ -74,24 +74,20 @@ def worker(rec_id):
         stream.rt_cam.gaze_crd = rt_crd
         stream.show_coordinates()
     stream.close()
-    return data
+    write_data(data)
+    
 
 def run_workers(rec_ids, max_workers = 10):
-    results = []
     n = max_workers
     groups = [rec_ids[i : i + n] for i in range(0, len(rec_ids), n)]
     for rec_ids in groups:
-        pool = Pool()
-        result = pool.map(worker, rec_ids)
-        pool.close()
-        pool.join()
-        results.append(result)
-    merged_results = list(itertools.chain(*results))
-    return merged_results
+        p_list = [Process(target = worker, args = (id, )) for id in rec_ids]
+        for p in p_list:
+            p.start()
+        for p in p_list:
+            p.join()
     
 
 if __name__ == "__main__":
     rec_ids = range(1, 75)
-    results = run_workers(rec_ids, max_workers = 10)
-    print([r["id"] for r in results])
-    write_data(results)
+    run_workers(rec_ids, max_workers = 10)
