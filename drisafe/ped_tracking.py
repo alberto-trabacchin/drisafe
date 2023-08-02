@@ -130,8 +130,9 @@ def track_people(rec_id):
     print(f"Computing recording {rec_id}...")
     while True:
         sstream.read()
-        frame = sstream.rt_frame
-        results = model.track(frame, persist = True, verbose = False, tracker = "bytetrack.yaml")
+        frame = sstream.rt_cam.frame
+        results = model.track(frame, persist = True, verbose = False, 
+                              tracker = "custom_tracker.yaml")
         if results[0].boxes.id != None:
             frame_n = sstream.t_step
             ped_boxes, ped_scores, ped_ids = get_people_data(results, rec_id, frame_n)
@@ -187,4 +188,4 @@ if __name__ == "__main__":
     rec_ids = [i for i in range(1, 75)]
     for id in rec_ids:
         people_data_rec = track_people(rec_id = id)
-        write_track_data(people_data_rec, id)
+        #write_track_data(people_data_rec, id)
