@@ -15,7 +15,7 @@ def get_empty_array(size):
 def isnan(np_array):
     return np.isnan(np.sum(np_array))
 
-def get_rt_crds(stream):
+def get_rt_crds(stream, verbose):
     etg_crd = stream.etg_cam.gaze_crd 
     rt_frame_gray = cv.cvtColor(stream.rt_cam.frame, cv.COLOR_BGR2GRAY)
     etg_frame_gray = cv.cvtColor(stream.etg_cam.frame, cv.COLOR_BGR2GRAY)
@@ -28,14 +28,16 @@ def get_rt_crds(stream):
         rt_crd = get_empty_array(size = (1, 1, 2))
         nan_crds = True
     if (n_matches < 4):
-        print("Not enough matches.")
+        if verbose:
+            print(f"({stream.rec_id}) Not enough matches.")
         rt_crd = get_empty_array(size = (1, 1, 2))
         H = get_empty_array(size = (3, 3))
         mask = get_empty_array(size = (n_matches, 1))
     else:
         H, mask = homography.estimate_homography(etg_kp, rt_kp, matches)
         if H is None:
-            print("Minimization not reached.")
+            if verbose:
+                print(f"({stream.rec_id}) Minimization not reached.")
             H = get_empty_array(size = (3, 3))
             mask = get_empty_array(size = (n_matches, 1))
             rt_crd = get_empty_array(size = (1, 1, 2))
@@ -56,14 +58,15 @@ def write_data(data, id):
         json.dump(data, fl, default = save_default, indent = 2)
     print(f"({id}) Data written.")
 
-def worker(rec_id):
+def worker(args):
+    rec_id, verbose = args
     print(f"Running process {rec_id}.")
     stream = SStream(rec_id)
     data_list = []
     while True:
         stream.read()
         if not stream.online: break
-        rt_crd, H, num_rt_kp, num_etg_kp, n_matches = get_rt_crds(stream)
+        rt_crd, H, num_rt_kp, num_etg_kp, n_matches = get_rt_crds(stream, verbose)
         data_list.append({
             "rt_crd": rt_crd.reshape(2),
             "etg_crd": stream.etg_cam.gaze_crd.reshape(2),
@@ -73,7 +76,8 @@ def worker(rec_id):
             "n_matches": n_matches
         })
         stream.rt_cam.gaze_crd = rt_crd
-        #stream.show_coordinates()
+        if verbose:
+            stream.show_coordinates()
 
     stream.close()
     write_data(data_list, rec_id)
@@ -83,7 +87,9 @@ def worker(rec_id):
 if __name__ == "__main__":
     rec_ids = range(1, 75)
     p = Pool(processes = 10)
-    results = p.map(worker, rec_ids)
+    verbose = False
+    args = [(id, verbose) for id in rec_ids]
+    results = p.map(worker, args)
     p.close()
     p.join()
     print(results)
