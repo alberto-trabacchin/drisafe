@@ -41,15 +41,16 @@ def get_rt_crds(stream):
             rt_crd = get_empty_array(size = (1, 1, 2))
         elif not nan_crds:
             rt_crd = homography.project_gaze(etg_crd, H)
-    return rt_crd, H, mask
+    num_rt_kp = len(rt_kp)
+    num_etg_kp = len(etg_kp)
+    return rt_crd, H, num_rt_kp, num_etg_kp, n_matches
 
 def save_default(obj):
     if isinstance(obj, np.ndarray):
         return obj.tolist()
     raise TypeError('Not serializable')
 
-def write_data(data):
-    id = data["id"]
+def write_data(data, id):
     data_path = SENSORS[id - 1]["gaze_track"]["rt_crd_path"]
     with open(data_path, 'w') as fl:
         json.dump(data, fl, default = save_default, indent = 2)
@@ -58,36 +59,31 @@ def write_data(data):
 def worker(rec_id):
     print(f"Running process {rec_id}.")
     stream = SStream(rec_id)
-    data = {
-        "id": rec_id,
-        "rt_crd": [],
-        "H": [],
-        "mask": []
-    }
+    data_list = []
     while True:
         stream.read()
         if not stream.online: break
-        rt_crd, H, mask  = get_rt_crds(stream)
-        data["rt_crd"].append(rt_crd)
-        data["H"].append(H)
-        data["mask"].append(mask)
+        rt_crd, H, num_rt_kp, num_etg_kp, n_matches = get_rt_crds(stream)
+        data_list.append({
+            "rt_crd": rt_crd.reshape(2),
+            "etg_crd": stream.etg_cam.gaze_crd.reshape(2),
+            "H": H,
+            "num_rt_kp": num_rt_kp,
+            "num_etg_kp": num_etg_kp,
+            "n_matches": n_matches
+        })
         stream.rt_cam.gaze_crd = rt_crd
-        stream.show_coordinates()
-    stream.close()
-    write_data(data)
-    
+        #stream.show_coordinates()
 
-def run_workers(rec_ids, max_workers = 10):
-    n = max_workers
-    groups = [rec_ids[i : i + n] for i in range(0, len(rec_ids), n)]
-    for rec_ids in groups:
-        p_list = [Process(target = worker, args = (id, )) for id in rec_ids]
-        for p in p_list:
-            p.start()
-        for p in p_list:
-            p.join()
+    stream.close()
+    write_data(data_list, rec_id)
+    return True
     
 
 if __name__ == "__main__":
     rec_ids = range(1, 75)
-    run_workers(rec_ids, max_workers = 10)
+    p = Pool(processes = 10)
+    results = p.map(worker, rec_ids)
+    p.close()
+    p.join()
+    print(results)

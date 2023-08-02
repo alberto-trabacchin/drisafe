@@ -79,10 +79,10 @@ class SStream(object):
                 self.rt_cam.read_frame()
             while (self.etg_cam.get_frame_count() <= etg_frame_id):
                 self.etg_cam.read_frame()
-            if (self.rt_data_avail) and (self.t_step < len(self.rt_data["rt_crd"])):
+            if (self.rt_data_avail) and (self.t_step < len(self.rt_data)):
                 self.rt_cam.gaze_crd = np.array(
-                    self.rt_data["rt_crd"][self.t_step]
-                )
+                    self.rt_data[self.t_step]["rt_crd"]
+                ).reshape(1, 1, 2)
             self.t_step += 1
         else:
             self.online = False
