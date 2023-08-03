@@ -1,9 +1,12 @@
 from drisafe.config.workspace_params import DS_PATH
+from pathlib import Path
 
 DS_DESIGN_PATH = DS_PATH / "dr(eye)ve_design.txt"
 _recordings = [d for d in list(DS_PATH.iterdir()) if d.is_dir()]
 RT_VID_PATHS = [s / "video_garmin.avi" for s in _recordings]
 ETG_VID_PATHS = [s / "video_etg.avi" for s in _recordings]
+RT_SAMPLE_PATH = Path("/media/rt_camera_sample_1.png")
+ETG_SAMPLE_PATH = Path("/media/etg_camera_sample_1.png")
 ETG_DATA_PATHS = [s / "etg_samples.txt" for s in _recordings]
 ETG_PROJ_DATA_PATHS = [s / "etg_proj_samples.csv" for s in _recordings]
 GPS_PATHS = [s / "speed_course_coord.txt" for s in _recordings]
