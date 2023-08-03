@@ -160,7 +160,7 @@ cython_debug/
 #.idea/
 
 # Configuration file
-/drisafe/config/paths.py
+/drisafe/config/workspace_params.py
 /.vscode
 
 # Virtual environment
