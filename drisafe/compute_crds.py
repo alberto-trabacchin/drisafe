@@ -1,8 +1,8 @@
+from drisafe.config.workspace_params import N_PROC
 from drisafe.sstream import SStream
 from drisafe import homography
 from drisafe.constants import SENSORS
-from drisafe.config.paths import COMPUTE_CRDS_LOG_PATH
-from multiprocessing import Pool, Process
+from multiprocessing import Pool
 import cv2 as cv
 import numpy as np
 import json
@@ -86,7 +86,7 @@ def worker(args):
 
 if __name__ == "__main__":
     rec_ids = range(1, 75)
-    p = Pool(processes = 10)
+    p = Pool(processes = N_PROC)
     verbose = False
     args = [(id, verbose) for id in rec_ids]
     results = p.map(worker, args)

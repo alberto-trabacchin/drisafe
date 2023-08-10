@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from ultralytics import YOLO
 import numpy as np
 import cv2
-from drisafe.config.paths import TRACKING_DATA_PATH
+from drisafe.config.paths import TRACK_DATA_PATH
 from drisafe.constants import SENSORS
 from drisafe.sstream import SStream
 import json
@@ -150,7 +150,7 @@ def track_people(rec_id):
 def write_track_data(people_data, id):
     list_data = [p.data for p in people_data]
     print(list_data)
-    data_path = TRACKING_DATA_PATH[id - 1]
+    data_path = TRACK_DATA_PATH[id - 1]
     json_data = json.dumps(list_data, indent = 4, default = int)
     with open(data_path, "w") as outfile:
         outfile.write(json_data)
