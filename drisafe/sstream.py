@@ -57,10 +57,10 @@ class SStream(object):
                                     delim_whitespace = True,
                                     index_col = False)
         if (rt_data_path.is_file()):
-            f = open(rt_data_path)
-            self.rt_data = json.load(f)
-            self.rt_data_avail = True
-            f.close()
+            with open(rt_data_path, "r", encoding = "utf-8") as f:
+                self.rt_data = json.load(f)
+                self.rt_data_avail = True
+                f.close()
         else:
             self.rt_data = pd.DataFrame({"X": [], "Y": []})
             self.rt_data_avail = False

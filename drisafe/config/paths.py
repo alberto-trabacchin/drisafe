@@ -8,7 +8,7 @@ ETG_VID_PATHS = [s / "video_etg.avi" for s in _recordings]
 RT_SAMPLE_PATH = Path("/media/rt_camera_sample_1.png")
 ETG_SAMPLE_PATH = Path("/media/etg_camera_sample_1.png")
 ETG_DATA_PATHS = [s / "etg_samples.txt" for s in _recordings]
-ETG_PROJ_DATA_PATHS = [s / "etg_proj_samples.csv" for s in _recordings]
+ETG_PROJ_DATA_PATHS = [s / "etg_proj_samples.json" for s in _recordings]
 GPS_PATHS = [s / "speed_course_coord.txt" for s in _recordings]
 TRACK_DATA_PATH = [s / "people_track.json" for s in _recordings]
 
