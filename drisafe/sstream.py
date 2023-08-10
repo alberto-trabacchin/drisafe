@@ -156,8 +156,9 @@ class SStream(object):
 if __name__ == "__main__":
     stream = SStream(rec_id = 6)
     stream.set_init_frames(rt_frame_no = 0)
-    while stream.online:
+    while True:
         stream.read()
+        if not stream.online: break
         stream.show_frames_side(fullscreen = True,
                                 show_gazes = True)
         stream.show_coordinates()
