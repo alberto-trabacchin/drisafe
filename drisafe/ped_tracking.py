@@ -124,7 +124,7 @@ def draw_bbox(frame, box, id):
         )
 
 def track_people(rec_id):
-    sstream = SStream(rec_id)
+    sstream = SStream(rec_id, t_step = 3000)
     model = YOLO("yolov8x.pt")
     people_list = []
     print(f"Computing recording {rec_id}...")
@@ -137,9 +137,11 @@ def track_people(rec_id):
             frame_n = sstream.t_step
             ped_boxes, ped_scores, ped_ids = get_people_data(results, rec_id, frame_n)
             update_track_data(people_list, ped_ids, ped_boxes, ped_scores, 
-                              sstream.rt_crd, frame_n, rec_id)
+                              sstream.rt_cam.gaze_crd, frame_n, rec_id)
             for box, id in zip(ped_boxes, ped_ids):
                 draw_bbox(frame, box, id)
+        cv2.namedWindow("frame", cv2.WND_PROP_FULLSCREEN)
+        cv2.setWindowProperty("frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow("frame", frame)
         if (cv2.waitKey(1) & 0xFF == ord("q")): break
         if not sstream.online: break
@@ -186,6 +188,7 @@ def estim_depth():
 if __name__ == "__main__":
     rec_ids = [4, 6, 7, 10, 11, 12, 13, 16, 18, 19, 26, 27, 35, 38, 39, 40, 47, 51, 53, 58, 60, 61, 64, 65, 70, 72]
     rec_ids = [i for i in range(1, 75)]
+    rec_ids = [6]
     for id in rec_ids:
         people_data_rec = track_people(rec_id = id)
         #write_track_data(people_data_rec, id)
